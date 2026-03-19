@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.util.stream.Collectors;
 @Slf4j
 @ControllerAdvice
@@ -94,6 +95,18 @@ public class GlobalExceptionHandler {
         model.addAttribute("errorMessage", errors);
         return "error/400";
     }
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Object handleNoResource(NoResourceFoundException ex, HttpServletRequest request, Model model) {
+        log.warn("No resource found: {}", request.getRequestURI());
+        if (isApiRequest(request)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("Resource not found: " + request.getRequestURI()));
+        }
+        model.addAttribute("errorCode", 404);
+        model.addAttribute("errorMessage", "Page not found: " + request.getRequestURI());
+        return "error/404";
+    }
+
     @ExceptionHandler(Exception.class)
     public Object handleGeneric(Exception ex, HttpServletRequest request, Model model) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
