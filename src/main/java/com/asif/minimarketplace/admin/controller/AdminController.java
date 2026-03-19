@@ -1,5 +1,8 @@
 package com.asif.minimarketplace.admin.controller;
 
+import com.asif.minimarketplace.order.entity.Order;
+import com.asif.minimarketplace.order.entity.OrderStatus;
+import com.asif.minimarketplace.order.service.OrderService;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.ProductService;
 import com.asif.minimarketplace.seller.entity.ApprovalStatus;
@@ -25,6 +28,7 @@ public class AdminController {
     private final UserRepository userRepository;
     private final SellerProfileService sellerProfileService;
     private final ProductService productService;
+    private final OrderService orderService;
 
     // ── Dashboard ──────────────────────────────────────────────────────────
     @GetMapping("/dashboard")
@@ -36,6 +40,11 @@ public class AdminController {
         model.addAttribute("activeProducts", productService.countActive());
         model.addAttribute("pendingSellers", sellerProfileService.countByStatus(ApprovalStatus.PENDING));
         model.addAttribute("approvedSellers", sellerProfileService.countByStatus(ApprovalStatus.APPROVED));
+        model.addAttribute("totalOrders", orderService.countByStatus(OrderStatus.PENDING)
+                + orderService.countByStatus(OrderStatus.CONFIRMED)
+                + orderService.countByStatus(OrderStatus.PACKED)
+                + orderService.countByStatus(OrderStatus.SHIPPED)
+                + orderService.countByStatus(OrderStatus.DELIVERED));
         return "admin/dashboard";
     }
 
@@ -83,5 +92,13 @@ public class AdminController {
         ra.addFlashAttribute("successMessage",
                 "Product \"" + p.getName() + "\" is now " + (p.isActive() ? "active" : "inactive"));
         return "redirect:/admin/products";
+    }
+
+    // ── Order Management ───────────────────────────────────────────────────
+    @GetMapping("/orders")
+    public String listOrders(Model model) {
+        List<Order> orders = orderService.getAllOrders();
+        model.addAttribute("orders", orders);
+        return "admin/orders";
     }
 }

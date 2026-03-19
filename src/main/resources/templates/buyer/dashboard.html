@@ -27,6 +27,8 @@
                 <a class="nav-link active" th:href="@{/buyer/dashboard}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
                 <a class="nav-link" th:href="@{/buyer/profile}"><i class="bi bi-person me-2"></i>Profile</a>
                 <a class="nav-link" th:href="@{/buyer/addresses}"><i class="bi bi-geo-alt me-2"></i>Addresses</a>
+                <a class="nav-link" th:href="@{/buyer/cart}"><i class="bi bi-cart3 me-2"></i>My Cart</a>
+                <a class="nav-link" th:href="@{/buyer/orders}"><i class="bi bi-box-seam me-2"></i>My Orders</a>
                 <a class="nav-link" th:href="@{/products}"><i class="bi bi-grid me-2"></i>Browse Products</a>
                 <hr style="border-color:#334155">
                 <form th:action="@{/logout}" method="post" class="d-inline">
@@ -91,7 +93,20 @@
                             </div>
                             <div>
                                 <p class="text-muted mb-0 small">Orders</p>
-                                <h4 class="fw-bold mb-0">0</h4>
+                                <h4 class="fw-bold mb-0" th:text="${orderCount}">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card p-3" style="border-left-color:#3b82f6;">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="bi bi-cart3 fs-2" style="color:#3b82f6;"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-0 small">Cart Items</p>
+                                <h4 class="fw-bold mb-0" th:text="${cartItemCount}">0</h4>
                             </div>
                         </div>
                     </div>
@@ -102,6 +117,16 @@
             <div class="card p-4">
                 <h6 class="fw-semibold mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.05em;">Quick Actions</h6>
                 <div class="row g-2">
+                    <div class="col-auto">
+                        <a th:href="@{/buyer/cart}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-cart3 me-1"></i>View Cart
+                        </a>
+                    </div>
+                    <div class="col-auto">
+                        <a th:href="@{/buyer/orders}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-box-seam me-1"></i>My Orders
+                        </a>
+                    </div>
                     <div class="col-auto">
                         <a th:href="@{/buyer/profile}" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-pencil me-1"></i>Edit Profile
