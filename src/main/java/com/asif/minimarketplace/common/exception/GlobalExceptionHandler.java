@@ -107,6 +107,18 @@ public class GlobalExceptionHandler {
         return "error/404";
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public Object handleIllegalState(IllegalStateException ex, HttpServletRequest request, Model model) {
+        log.warn("Illegal state: {}", ex.getMessage());
+        if (isApiRequest(request)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(ex.getMessage()));
+        }
+        model.addAttribute("errorCode", 400);
+        model.addAttribute("errorMessage", ex.getMessage());
+        return "error/400";
+    }
+
     @ExceptionHandler(Exception.class)
     public Object handleGeneric(Exception ex, HttpServletRequest request, Model model) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
