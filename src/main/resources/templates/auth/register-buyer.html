@@ -29,13 +29,14 @@
                 </div>
                 <form th:action="@{/register/buyer}" th:object="${registerRequest}" method="post" novalidate>
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="mb-3">
                         <label for="fullName" class="form-label fw-semibold">Full Name</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-person"></i></span>
                             <input type="text" id="fullName" th:field="*{fullName}"
-                                   class="form-control" th:classappend=" ? 'is-invalid'"
                                    class="form-control" th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'"
-                                   class="form-control" th:classappend=" ? 'is-invalid'"
+                                   placeholder="John Doe">
+                        </div>
                         <div class="invalid-feedback" th:errors="*{fullName}"></div>
                     </div>
                     <div class="mb-3">
@@ -43,8 +44,8 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                             <input type="email" id="email" th:field="*{email}"
-                                   class="form-control" th:classappend=" ? 'is-invalid'"
                                    class="form-control" th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
+                                   placeholder="you@example.com">
                         </div>
                         <div class="invalid-feedback" th:errors="*{email}"></div>
                     </div>
@@ -53,8 +54,8 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-lock"></i></span>
                             <input type="password" id="password" th:field="*{password}"
-                                   class="form-control" th:classappend=" ? 'is-invalid'"
                                    class="form-control" th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                   placeholder="Min 6 characters">
                         </div>
                         <div class="invalid-feedback" th:errors="*{password}"></div>
                     </div>
@@ -63,8 +64,8 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
                             <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
-                                   class="form-control" th:classappend=" ? 'is-invalid'"
                                    class="form-control" th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'"
+                                   placeholder="Repeat password">
                         </div>
                         <div class="invalid-feedback" th:errors="*{confirmPassword}"></div>
                     </div>
