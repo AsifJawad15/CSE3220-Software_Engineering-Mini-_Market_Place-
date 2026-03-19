@@ -23,22 +23,21 @@
                     <p class="text-muted">Sign in to your account</p>
                 </div>
                 <!-- Success / logout messages -->
-                <div th:if="" class="alert alert-success alert-dismissible" role="alert">
+                <div th:if="${param.logout}" class="alert alert-success alert-dismissible" role="alert">
                     You have been logged out successfully.
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div th:if="" class="alert alert-success alert-dismissible" role="alert">
-                    <span th:text=""></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible" role="alert">
+                    <span th:text="${successMessage}"></span>
                 </div>
                 <div th:if="" class="alert alert-danger alert-dismissible" role="alert">
-                    Invalid email or password. Please try again.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div th:if="${param.error}" class="alert alert-danger alert-dismissible" role="alert">
+                <div th:if="" class="alert alert-danger alert-dismissible" role="alert">
                 </div>
                 <form th:action="@{/login}" method="post">
                     <input type="hidden" th:name="" th:value="" />
-                    <div class="mb-3">
-                        <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <input type="hidden" th:name="" th:value="" />
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                             <input type="email" id="email" name="email" class="form-control"

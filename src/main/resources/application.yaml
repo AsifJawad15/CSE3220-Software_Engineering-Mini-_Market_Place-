@@ -31,8 +31,9 @@ spring:
 
 server:
   port: ${PORT:8080}
-  error:
-    include-message: always
+  servlet:
+    session:
+      tracking-modes: cookie
     include-binding-errors: always
 
 logging:

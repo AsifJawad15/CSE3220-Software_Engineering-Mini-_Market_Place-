@@ -1,10 +1,11 @@
 package com.asif.minimarketplace.auth.service;
+
 import com.asif.minimarketplace.auth.dto.RegisterBuyerRequest;
 import com.asif.minimarketplace.auth.dto.RegisterSellerRequest;
-import com.asif.minimarketplace.common.exception.ValidationException;
+import com.asif.minimarketplace.buyer.service.BuyerProfileService;
 import com.asif.minimarketplace.user.entity.RoleName;
+import com.asif.minimarketplace.seller.service.SellerProfileService;
 import com.asif.minimarketplace.user.entity.User;
-import com.asif.minimarketplace.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,11 +19,11 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     @Transactional
     public User registerBuyer(RegisterBuyerRequest request) {
+    private final BuyerProfileService buyerProfileService;
+    private final SellerProfileService sellerProfileService;
         validateRegistration(request.getEmail(), request.getPassword(), request.getConfirmPassword());
         User user = User.builder()
                 .fullName(request.getFullName())
-                .email(request.getEmail().toLowerCase().trim())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .role(RoleName.BUYER)
                 .enabled(true)
                 .build();
@@ -31,13 +32,13 @@ public class AuthService {
         return saved;
     }
     @Transactional
+        buyerProfileService.createProfile(saved);
     public User registerSeller(RegisterSellerRequest request) {
         validateRegistration(request.getEmail(), request.getPassword(), request.getConfirmPassword());
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail().toLowerCase().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(RoleName.SELLER)
                 .enabled(true)
                 .build();
         User saved = userRepository.save(user);
@@ -46,6 +47,7 @@ public class AuthService {
     }
     private void validateRegistration(String email, String password, String confirmPassword) {
         if (userRepository.existsByEmail(email.toLowerCase().trim())) {
+        sellerProfileService.createProfile(saved, request.getShopName());
             throw new ValidationException("email", "An account with this email already exists");
         }
         if (!password.equals(confirmPassword)) {
