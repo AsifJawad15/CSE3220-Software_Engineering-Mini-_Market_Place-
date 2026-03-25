@@ -27,6 +27,7 @@
                 <a class="nav-link" th:href="@{/admin/sellers}"><i class="bi bi-shop me-2"></i>Sellers</a>
                 <a class="nav-link" th:href="@{/admin/users}"><i class="bi bi-people me-2"></i>Users</a>
                 <a class="nav-link" th:href="@{/admin/products}"><i class="bi bi-box-seam me-2"></i>Products</a>
+                <a class="nav-link" th:href="@{/admin/orders}"><i class="bi bi-receipt me-2"></i>Orders</a>
                 <hr style="border-color:#334155">
                 <form th:action="@{/logout}" method="post" class="d-inline">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -102,6 +103,7 @@
                     <a th:href="@{/admin/sellers}" class="btn btn-outline-warning btn-sm"><i class="bi bi-shop me-1"></i>Manage Sellers</a>
                     <a th:href="@{/admin/users}" class="btn btn-outline-primary btn-sm"><i class="bi bi-people me-1"></i>Manage Users</a>
                     <a th:href="@{/admin/products}" class="btn btn-outline-success btn-sm"><i class="bi bi-box-seam me-1"></i>Manage Products</a>
+                    <a th:href="@{/admin/orders}" class="btn btn-outline-info btn-sm"><i class="bi bi-receipt me-1"></i>View Orders</a>
                 </div>
             </div>
         </div>

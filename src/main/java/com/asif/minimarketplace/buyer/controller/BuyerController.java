@@ -5,6 +5,9 @@ import com.asif.minimarketplace.buyer.dto.UpdateBuyerProfileRequest;
 import com.asif.minimarketplace.buyer.entity.Address;
 import com.asif.minimarketplace.buyer.entity.BuyerProfile;
 import com.asif.minimarketplace.buyer.service.BuyerProfileService;
+import com.asif.minimarketplace.cart.entity.Cart;
+import com.asif.minimarketplace.cart.service.CartService;
+import com.asif.minimarketplace.order.service.OrderService;
 import com.asif.minimarketplace.user.entity.User;
 import com.asif.minimarketplace.user.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -28,6 +31,8 @@ public class BuyerController {
 
     private final BuyerProfileService buyerProfileService;
     private final UserRepository userRepository;
+    private final CartService cartService;
+    private final OrderService orderService;
 
     private User getCurrentUser(UserDetails userDetails) {
         return userRepository.findByEmail(userDetails.getUsername())
@@ -40,9 +45,12 @@ public class BuyerController {
         User user = getCurrentUser(userDetails);
         BuyerProfile profile = buyerProfileService.getProfileByUserId(user.getId());
         List<Address> addresses = buyerProfileService.getAddresses(user.getId());
+        Cart cart = cartService.getOrCreateCart(user.getId());
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
         model.addAttribute("addressCount", addresses.size());
+        model.addAttribute("cartItemCount", cart.getItems().size());
+        model.addAttribute("orderCount", orderService.getBuyerOrders(user.getId()).size());
         return "buyer/dashboard";
     }
 
