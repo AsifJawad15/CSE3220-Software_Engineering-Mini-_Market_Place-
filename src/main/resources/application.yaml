@@ -3,7 +3,7 @@ spring:
     name: MiniMarketPlace
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/minimarketplace}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/minimarketplace}
     username: ${DB_USER:miniuser}
     password: ${DB_PASS:minipass}
     driver-class-name: org.postgresql.Driver
@@ -16,7 +16,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    open-in-view: true
+    open-in-view: false
 
   thymeleaf:
     cache: false

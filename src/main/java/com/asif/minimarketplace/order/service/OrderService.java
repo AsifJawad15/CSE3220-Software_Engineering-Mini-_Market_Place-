@@ -39,7 +39,7 @@ public class OrderService {
 
     public Order getBuyerOrderDetail(Long userId, Long orderId) {
         BuyerProfile profile = buyerProfileService.getProfileByUserId(userId);
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdWithItems(orderId)
                 .orElseThrow(() -> new NotFoundException("Order", orderId));
         if (!order.getBuyerProfile().getId().equals(profile.getId())) {
             throw new AccessDeniedException("You do not own this order");
@@ -74,7 +74,7 @@ public class OrderService {
 
     @Transactional
     public Order advanceOrderStatus(Long orderId, Long sellerId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdWithItems(orderId)
                 .orElseThrow(() -> new NotFoundException("Order", orderId));
 
         // Verify seller owns at least one item in this order
@@ -103,7 +103,7 @@ public class OrderService {
     // ── Admin methods ──────────────────────────────────────────────────────
 
     public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+        return orderRepository.findAllWithDetails();
     }
 
     public long countByStatus(OrderStatus status) {

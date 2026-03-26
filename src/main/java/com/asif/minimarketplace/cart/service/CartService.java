@@ -32,7 +32,8 @@ public class CartService {
     @Transactional
     public Cart getOrCreateCart(Long userId) {
         BuyerProfile profile = buyerProfileService.getProfileByUserId(userId);
-        return cartRepository.findByBuyerProfileId(profile.getId())
+        // Use eager-loading query so items/products/categories are available outside this transaction
+        return cartRepository.findByBuyerProfileIdWithItems(profile.getId())
                 .orElseGet(() -> {
                     Cart newCart = Cart.builder().buyerProfile(profile).build();
                     return cartRepository.save(newCart);
