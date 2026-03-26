@@ -89,7 +89,7 @@ class OrderServiceTest {
     @Test
     void getBuyerOrderDetail_ownerMatch_returnsOrder() {
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
 
         Order result = orderService.getBuyerOrderDetail(1L, 100L);
         assertThat(result.getTotalAmount()).isEqualByComparingTo(BigDecimal.valueOf(20.00));
@@ -100,7 +100,7 @@ class OrderServiceTest {
         BuyerProfile other = BuyerProfile.builder().user(buyerUser).build();
         other.setId(99L);
         when(buyerProfileService.getProfileByUserId(2L)).thenReturn(other);
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.getBuyerOrderDetail(2L, 100L))
                 .isInstanceOf(AccessDeniedException.class);
@@ -109,7 +109,7 @@ class OrderServiceTest {
     @Test
     void cancelOrder_pending_success() {
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Order result = orderService.cancelOrder(1L, 100L);
@@ -121,7 +121,7 @@ class OrderServiceTest {
     void cancelOrder_notPending_throwsIllegalState() {
         order.setStatus(OrderStatus.SHIPPED);
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.cancelOrder(1L, 100L))
                 .isInstanceOf(IllegalStateException.class)
@@ -130,7 +130,7 @@ class OrderServiceTest {
 
     @Test
     void advanceOrderStatus_pending_becomesConfirmed() {
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Order result = orderService.advanceOrderStatus(100L, 10L);
@@ -139,7 +139,7 @@ class OrderServiceTest {
 
     @Test
     void advanceOrderStatus_sellerNotInOrder_throwsAccessDenied() {
-        when(orderRepository.findById(100L)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItems(100L)).thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.advanceOrderStatus(100L, 999L))
                 .isInstanceOf(AccessDeniedException.class);

@@ -62,14 +62,14 @@ class ProductServiceTest {
 
     @Test
     void findById_exists_returnsProduct() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(product));
         Product result = productService.findById(1L);
         assertThat(result.getName()).isEqualTo("Laptop");
     }
 
     @Test
     void findById_notExists_throwsNotFound() {
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+        when(productRepository.findByIdWithDetails(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> productService.findById(99L))
                 .isInstanceOf(NotFoundException.class);
     }
@@ -112,7 +112,7 @@ class ProductServiceTest {
         request.setCategoryId(1L);
         request.setActive(true);
 
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(product));
         when(categoryService.findById(1L)).thenReturn(category);
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
@@ -130,7 +130,7 @@ class ProductServiceTest {
         request.setName("Hacked");
         request.setCategoryId(1L);
 
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(product));
 
         assertThatThrownBy(() -> productService.update(1L, request, otherSeller))
                 .isInstanceOf(AccessDeniedException.class);
@@ -138,7 +138,7 @@ class ProductServiceTest {
 
     @Test
     void delete_ownerMatch_success() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(product));
         productService.delete(1L, seller);
         verify(productRepository).delete(product);
     }
@@ -146,7 +146,7 @@ class ProductServiceTest {
     @Test
     void toggleActive_flipsState() {
         product.setActive(true);
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(product));
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Product result = productService.toggleActive(1L);
