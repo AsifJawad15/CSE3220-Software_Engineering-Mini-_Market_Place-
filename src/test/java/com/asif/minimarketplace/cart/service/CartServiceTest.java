@@ -57,7 +57,7 @@ class CartServiceTest {
     @Test
     void getOrCreateCart_existingCart_returnsIt() {
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
 
         Cart result = cartService.getOrCreateCart(1L);
         assertThat(result.getId()).isEqualTo(1L);
@@ -67,7 +67,7 @@ class CartServiceTest {
     @Test
     void getOrCreateCart_noCart_createsNew() {
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.empty());
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> {
             Cart c = inv.getArgument(0);
             c.setId(2L);
@@ -82,7 +82,7 @@ class CartServiceTest {
     @Test
     void addItem_newItem_success() {
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
         when(productService.findById(1L)).thenReturn(product);
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -95,7 +95,7 @@ class CartServiceTest {
     void addItem_inactiveProduct_throwsNotFound() {
         product.setActive(false);
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
         when(productService.findById(1L)).thenReturn(product);
 
         assertThatThrownBy(() -> cartService.addItem(1L, 1L, 1))
@@ -107,7 +107,7 @@ class CartServiceTest {
     void addItem_insufficientStock_throwsException() {
         product.setStockQuantity(1);
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
         when(productService.findById(1L)).thenReturn(product);
 
         assertThatThrownBy(() -> cartService.addItem(1L, 1L, 5))
@@ -133,7 +133,7 @@ class CartServiceTest {
         cart.getItems().add(item);
 
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileId(1L)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Cart result = cartService.removeItem(1L, 10L);
