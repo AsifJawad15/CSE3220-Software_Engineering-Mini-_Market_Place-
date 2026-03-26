@@ -42,6 +42,8 @@ public class SecurityConfig {
                 // public pages
                 .requestMatchers("/", "/products/**", "/api/products/**", "/api/categories/**").permitAll()
                 .requestMatchers("/register/**", "/login", "/css/**", "/js/**", "/images/**").permitAll()
+                // H2 console (local dev only)
+                .requestMatchers("/h2-console/**").permitAll()
                 // admin only
                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                 // seller only
@@ -69,6 +71,12 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .accessDeniedPage("/error/403")
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**")
             );
         return http.build();
     }
