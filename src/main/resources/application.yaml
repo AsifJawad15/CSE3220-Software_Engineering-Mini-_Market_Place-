@@ -18,6 +18,10 @@ spring:
         format_sql: true
     open-in-view: true
 
+  docker:
+    compose:
+      enabled: false
+
   thymeleaf:
     cache: false
     prefix: classpath:/templates/
