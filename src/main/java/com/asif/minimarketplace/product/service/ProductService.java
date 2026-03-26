@@ -39,7 +39,7 @@ public class ProductService {
     }
 
     public Product findById(Long id) {
-        return productRepository.findById(id)
+        return productRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Product", id));
     }
 
@@ -101,7 +101,7 @@ public class ProductService {
     // ── Admin methods ──────────────────────────────────────────────────────
 
     public List<Product> findAll() {
-        return productRepository.findAll();
+        return productRepository.findAllWithDetails();
     }
 
     public long countActive() {

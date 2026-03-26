@@ -7,7 +7,6 @@ on:
     branches: [main, develop]
 
 jobs:
-  # ── Step 1: Build & Test ───────────────────────────────────────────────
   test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -46,7 +45,6 @@ jobs:
           path: target/*.jar
           retention-days: 7
 
-  # ── Step 2: Build Docker Image ─────────────────────────────────────────
   docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -65,7 +63,6 @@ jobs:
           docker build -t minimarketplace:latest .
           docker images | grep minimarketplace
 
-  # ── Step 3: Deploy to Render ───────────────────────────────────────────
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
