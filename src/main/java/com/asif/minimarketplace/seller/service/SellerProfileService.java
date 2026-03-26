@@ -56,7 +56,7 @@ public class SellerProfileService {
     // ── Admin methods ──────────────────────────────────────────────────────
 
     public List<SellerProfile> findAll() {
-        return sellerProfileRepository.findAll();
+        return sellerProfileRepository.findAllWithUser();
     }
 
     public List<SellerProfile> findByStatus(ApprovalStatus status) {
