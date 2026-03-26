@@ -6,123 +6,123 @@
     <title>My Cart - MiniMarketPlace</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f5f7fa; }
+        .sidebar { min-height: 100vh; background: #1e293b; }
+        .sidebar .nav-link { color: #94a3b8; border-radius: 8px; margin-bottom: 4px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #334155; color: #fff; }
+        .sidebar .brand { color: #fff; font-weight: 700; font-size: 1.2rem; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    </style>
 </head>
-<body class="bg-light">
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/products}"><i class="bi bi-shop me-2"></i>MiniMarketPlace</a>
-        <div class="d-flex align-items-center gap-3 ms-auto">
-            <a th:href="@{/buyer/cart}" class="btn btn-light btn-sm"><i class="bi bi-cart3 me-1"></i>Cart</a>
-            <a th:href="@{/buyer/orders}" class="btn btn-outline-light btn-sm"><i class="bi bi-box-seam me-1"></i>Orders</a>
-            <a th:href="@{/buyer/dashboard}" class="btn btn-outline-light btn-sm"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
-            <form th:action="@{/logout}" method="post" class="d-inline">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button class="btn btn-outline-light btn-sm" type="submit"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
-            </form>
-        </div>
-    </div>
-</nav>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/sidebar :: buyer('cart')}"></div>
 
-<div class="container py-4">
-    <h2 class="fw-bold mb-4"><i class="bi bi-cart3 me-2 text-primary"></i>My Cart</h2>
+        <!-- Main Content -->
+        <div class="col-md-10 py-4 px-4">
+            <h4 class="fw-bold mb-4"><i class="bi bi-cart3 me-2 text-primary"></i>My Cart</h4>
 
-    <!-- Alerts -->
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible">
-        <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible">
-        <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-
-    <!-- Empty Cart -->
-    <div th:if="${#lists.isEmpty(cart.items)}" class="text-center py-5">
-        <i class="bi bi-cart-x" style="font-size:4rem; color:#adb5bd;"></i>
-        <h4 class="mt-3 text-muted">Your cart is empty</h4>
-        <a th:href="@{/products}" class="btn btn-primary mt-3">
-            <i class="bi bi-bag-plus me-1"></i>Browse Products
-        </a>
-    </div>
-
-    <!-- Cart Items -->
-    <div th:unless="${#lists.isEmpty(cart.items)}">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Product</th>
-                        <th class="text-center">Price</th>
-                        <th class="text-center">Quantity</th>
-                        <th class="text-center">Subtotal</th>
-                        <th class="text-center">Action</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="item : ${cart.items}">
-                        <td class="align-middle">
-                            <a th:href="@{/products/{id}(id=${item.product.id})}"
-                               th:text="${item.product.name}" class="text-decoration-none fw-semibold"></a>
-                            <div class="small text-muted" th:text="${item.product.category.name}"></div>
-                        </td>
-                        <td class="align-middle text-center">
-                            <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></span>
-                        </td>
-                        <td class="align-middle text-center">
-                            <form th:action="@{/buyer/cart/update/{id}(id=${item.id})}" method="post" class="d-flex align-items-center justify-content-center gap-1">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <input type="number" name="quantity" th:value="${item.quantity}" min="1" max="99"
-                                       class="form-control form-control-sm text-center" style="width:70px;">
-                                <button class="btn btn-sm btn-outline-secondary" type="submit" title="Update">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
-                            </form>
-                        </td>
-                        <td class="align-middle text-center fw-semibold">
-                            <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot.multiply(T(java.math.BigDecimal).valueOf(item.quantity)),1,2)}"></span>
-                        </td>
-                        <td class="align-middle text-center">
-                            <form th:action="@{/buyer/cart/remove/{id}(id=${item.id})}" method="post">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <button class="btn btn-sm btn-outline-danger" type="submit" title="Remove">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+            <!-- Alerts -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible">
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
 
-        <!-- Cart Summary -->
-        <div class="row justify-content-end">
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">Order Summary</h5>
-                        <hr>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotal</span>
-                            <strong th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+            <!-- Empty Cart -->
+            <div th:if="${#lists.isEmpty(cart.items)}" class="text-center py-5">
+                <i class="bi bi-cart-x" style="font-size:4rem; color:#adb5bd;"></i>
+                <h4 class="mt-3 text-muted">Your cart is empty</h4>
+                <a th:href="@{/products}" class="btn btn-primary mt-3">
+                    <i class="bi bi-bag-plus me-1"></i>Browse Products
+                </a>
+            </div>
+
+            <!-- Cart Items -->
+            <div th:unless="${#lists.isEmpty(cart.items)}">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center">Price</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-center">Subtotal</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${cart.items}">
+                                <td class="align-middle">
+                                    <a th:href="@{/products/{id}(id=${item.product.id})}"
+                                       th:text="${item.product.name}" class="text-decoration-none fw-semibold"></a>
+                                    <div class="small text-muted" th:text="${item.product.category != null ? item.product.category.name : 'N/A'}"></div>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></span>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <form th:action="@{/buyer/cart/update/{id}(id=${item.id})}" method="post" class="d-flex align-items-center justify-content-center gap-1">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="number" name="quantity" th:value="${item.quantity}" min="1" max="99"
+                                               class="form-control form-control-sm text-center" style="width:70px;">
+                                        <button class="btn btn-sm btn-outline-secondary" type="submit" title="Update">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="align-middle text-center fw-semibold">
+                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot * item.quantity, 1, 2)}"></span>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <form th:action="@{/buyer/cart/remove/{id}(id=${item.id})}" method="post">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <button class="btn btn-sm btn-outline-danger" type="submit" title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cart Summary -->
+                <div class="row justify-content-end">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title fw-bold">Order Summary</h5>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal</span>
+                                    <strong th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Shipping</span>
+                                    <span class="text-success">Free</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <strong>Total</strong>
+                                    <strong class="text-primary fs-5" th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                </div>
+                                <a th:href="@{/buyer/checkout}" class="btn btn-primary w-100">
+                                    <i class="bi bi-credit-card me-2"></i>Proceed to Checkout
+                                </a>
+                                <a th:href="@{/products}" class="btn btn-outline-secondary w-100 mt-2">
+                                    <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+                                </a>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between mb-3">
-                            <span>Shipping</span>
-                            <span class="text-success">Free</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between mb-3">
-                            <strong>Total</strong>
-                            <strong class="text-primary fs-5" th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
-                        </div>
-                        <a th:href="@{/buyer/checkout}" class="btn btn-primary w-100">
-                            <i class="bi bi-credit-card me-2"></i>Proceed to Checkout
-                        </a>
-                        <a th:href="@{/products}" class="btn btn-outline-secondary w-100 mt-2">
-                            <i class="bi bi-arrow-left me-1"></i>Continue Shopping
-                        </a>
                     </div>
                 </div>
             </div>
@@ -132,4 +132,3 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

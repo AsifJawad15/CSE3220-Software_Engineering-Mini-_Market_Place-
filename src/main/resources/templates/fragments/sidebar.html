@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- ═══ Seller Sidebar ═══ -->
+<div th:fragment="seller(activePage)" class="col-md-2 sidebar px-3 py-4">
+    <div class="brand mb-4 px-2"><i class="bi bi-shop me-2"></i>MiniMarket</div>
+    <nav class="nav flex-column">
+        <a th:classappend="${activePage == 'dashboard'} ? ' active'" class="nav-link" th:href="@{/seller/dashboard}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a th:classappend="${activePage == 'profile'} ? ' active'" class="nav-link" th:href="@{/seller/profile}"><i class="bi bi-person me-2"></i>Shop Profile</a>
+        <a th:classappend="${activePage == 'products'} ? ' active'" class="nav-link" th:href="@{/seller/products}"><i class="bi bi-box-seam me-2"></i>Products</a>
+        <a th:classappend="${activePage == 'orders'} ? ' active'" class="nav-link" th:href="@{/seller/orders}"><i class="bi bi-bag-check me-2"></i>Orders</a>
+        <hr style="border-color:#334155">
+        <form th:action="@{/logout}" method="post" class="d-inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="nav-link btn btn-link text-start w-100 border-0" style="color:#94a3b8">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </button>
+        </form>
+    </nav>
+</div>
+
+<!-- ═══ Buyer Sidebar ═══ -->
+<div th:fragment="buyer(activePage)" class="col-md-2 sidebar px-3 py-4">
+    <div class="brand mb-4 px-2"><i class="bi bi-shop me-2"></i>MiniMarket</div>
+    <nav class="nav flex-column">
+        <a th:classappend="${activePage == 'dashboard'} ? ' active'" class="nav-link" th:href="@{/buyer/dashboard}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+        <a th:classappend="${activePage == 'profile'} ? ' active'" class="nav-link" th:href="@{/buyer/profile}"><i class="bi bi-person me-2"></i>Profile</a>
+        <a th:classappend="${activePage == 'addresses'} ? ' active'" class="nav-link" th:href="@{/buyer/addresses}"><i class="bi bi-geo-alt me-2"></i>Addresses</a>
+        <a th:classappend="${activePage == 'cart'} ? ' active'" class="nav-link" th:href="@{/buyer/cart}"><i class="bi bi-cart3 me-2"></i>My Cart</a>
+        <a th:classappend="${activePage == 'orders'} ? ' active'" class="nav-link" th:href="@{/buyer/orders}"><i class="bi bi-box-seam me-2"></i>My Orders</a>
+        <a class="nav-link" th:href="@{/products}"><i class="bi bi-grid me-2"></i>Browse Products</a>
+        <hr style="border-color:#334155">
+        <form th:action="@{/logout}" method="post" class="d-inline">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="nav-link btn btn-link text-start w-100 border-0" style="color:#94a3b8;">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </button>
+        </form>
+    </nav>
+</div>
+
+</html>
+
