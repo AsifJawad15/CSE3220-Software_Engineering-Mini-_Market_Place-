@@ -49,4 +49,14 @@ class InventoryServiceTest {
         
         assertThrows(InsufficientStockException.class, () -> inventoryService.validateStock(10L, 60));
     }
+
+    @Test
+    void decreaseStock_Works() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        inventoryService.decreaseStock(10L, 20);
+
+        assertEquals(30, product.getStockQuantity());
+        verify(productRepository).save(product);
+    }
 }
