@@ -105,4 +105,15 @@ class ProductServiceTest {
         assertEquals(new BigDecimal("550.00"), product.getPrice());
         verify(productRepository).save(product);
     }
+
+    @Test
+    void findActiveProducts_ReturnsActiveItems() {
+        org.springframework.data.domain.Page<Product> page = new org.springframework.data.domain.PageImpl<>(java.util.Collections.singletonList(product));
+        when(productRepository.findByActiveTrue(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+
+        org.springframework.data.domain.Page<Product> result = productService.findActiveProducts(org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertFalse(result.isEmpty());
+        assertTrue(result.getContent().get(0).isActive());
+    }
 }
