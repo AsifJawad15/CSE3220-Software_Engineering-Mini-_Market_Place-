@@ -78,4 +78,17 @@ class ProductServiceTest {
 
         assertThrows(NotFoundException.class, () -> productService.findById(100L));
     }
+
+    @Test
+    void create_ReturnsSavedProduct() {
+        when(categoryService.findById(5L)).thenReturn(category);
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        Product result = productService.create(productRequest, seller);
+
+        assertNotNull(result);
+        assertEquals("Smartphone", result.getName());
+        verify(categoryService).findById(5L);
+        verify(productRepository).save(any(Product.class));
+    }
 }
