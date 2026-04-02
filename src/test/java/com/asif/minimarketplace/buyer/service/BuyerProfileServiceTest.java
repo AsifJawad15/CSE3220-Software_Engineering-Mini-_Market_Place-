@@ -144,6 +144,31 @@ class BuyerProfileServiceTest {
     }
 
     @Test
+    void addAddress_MakeDefaultClearsOldDefault() {
+        addressRequest.setMakeDefault(true);
+        
+        Address oldDefault = new Address();
+        oldDefault.setId(50L);
+        oldDefault.setDefaultAddress(true);
+
+        when(buyerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
+        when(addressRepository.countByBuyerProfileId(10L)).thenReturn(1L); // Existing addresses
+        when(addressRepository.findByBuyerProfileIdAndDefaultAddressTrue(10L)).thenReturn(Optional.of(oldDefault));
+        when(addressRepository.save(any(Address.class))).thenAnswer(i -> {
+            Address a = i.getArgument(0);
+            if (a.getId() == null) a.setId(200L);
+            return a;
+        });
+        when(buyerProfileRepository.save(any(BuyerProfile.class))).thenReturn(profile);
+
+        Address result = buyerProfileService.addAddress(1L, addressRequest);
+
+        assertTrue(result.isDefaultAddress());
+        assertFalse(oldDefault.isDefaultAddress()); // Old default was cleared
+        assertEquals(200L, profile.getDefaultAddressId());
+    }
+
+    @Test
     void updateAddress_Success() {
         when(buyerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
         when(addressRepository.findById(100L)).thenReturn(Optional.of(address));
