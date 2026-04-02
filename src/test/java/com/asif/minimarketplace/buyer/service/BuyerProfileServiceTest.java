@@ -241,4 +241,18 @@ class BuyerProfileServiceTest {
         verify(addressRepository).save(address);
         verify(buyerProfileRepository).save(profile);
     }
+
+    @Test
+    void setDefaultAddress_AccessDenied() {
+        BuyerProfile otherProfile = new BuyerProfile();
+        otherProfile.setId(20L);
+        Address otherAddress = new Address();
+        otherAddress.setId(100L);
+        otherAddress.setBuyerProfile(otherProfile);
+
+        when(buyerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
+        when(addressRepository.findById(100L)).thenReturn(Optional.of(otherAddress));
+
+        assertThrows(AccessDeniedException.class, () -> buyerProfileService.setDefaultAddress(1L, 100L));
+    }
 }
