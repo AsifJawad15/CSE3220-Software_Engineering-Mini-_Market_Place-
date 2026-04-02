@@ -89,4 +89,15 @@ class SellerProfileServiceTest {
         assertEquals("1234567890", profile.getPhone());
         verify(sellerProfileRepository).save(profile);
     }
+
+    @Test
+    void approveSeller_ChangesStatusToApproved() {
+        when(sellerProfileRepository.findById(10L)).thenReturn(Optional.of(profile));
+        when(sellerProfileRepository.save(any(SellerProfile.class))).thenReturn(profile);
+
+        SellerProfile result = sellerProfileService.approve(10L);
+
+        assertEquals(ApprovalStatus.APPROVED, result.getApprovalStatus());
+        verify(sellerProfileRepository).save(profile);
+    }
 }
