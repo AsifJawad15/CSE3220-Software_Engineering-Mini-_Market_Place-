@@ -131,9 +131,23 @@ class CheckoutServiceTest {
 
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> checkoutService.checkout(1L, 1L));
-        assertEquals("Cart is empty", exception.getMessage());
+    @Test
+    void shouldFailWhenStockIsInsufficient() {
+        // Arrange
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
+        when(cartService.getOrCreateCart(1L)).thenReturn(cart);
+
+        doThrow(new InsufficientStockException("Not enough stock for product"))
+            .when(inventoryService).validateStock(1L, 2);
+
+        // Act & Assert
+        InsufficientStockException exception = assertThrows(InsufficientStockException.class, 
+            () -> checkoutService.checkout(1L, 1L));
+            
+        assertEquals("Not enough stock for product", exception.getMessage());
         
-        verify(inventoryService, never()).validateStock(anyLong(), anyInt());
+        verify(inventoryService).validateStock(1L, 2);
         verify(orderRepository, never()).save(any(Order.class));
+        verify(inventoryService, never()).decreaseStock(anyLong(), anyInt());
     }
 }
