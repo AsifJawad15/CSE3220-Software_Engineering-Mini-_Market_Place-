@@ -71,4 +71,11 @@ class ProductServiceTest {
         assertNotNull(result);
         assertEquals("Smartphone", result.getName());
     }
+
+    @Test
+    void findById_ThrowsNotFoundWhenMissing() {
+        when(productRepository.findById(100L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> productService.findById(100L));
+    }
 }
