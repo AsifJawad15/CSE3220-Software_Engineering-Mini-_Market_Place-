@@ -72,4 +72,21 @@ class SellerProfileServiceTest {
 
         assertThrows(NotFoundException.class, () -> sellerProfileService.getProfileByUserId(1L));
     }
+
+    @Test
+    void updateProfile_Success() {
+        UpdateSellerProfileRequest updateRequest = new UpdateSellerProfileRequest();
+        updateRequest.setShopName("New Shop Name");
+        updateRequest.setPhone("1234567890");
+
+        when(sellerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
+        when(sellerProfileRepository.save(any(SellerProfile.class))).thenReturn(profile);
+
+        SellerProfile result = sellerProfileService.updateProfile(1L, updateRequest);
+
+        assertNotNull(result);
+        assertEquals("New Shop Name", profile.getShopName());
+        assertEquals("1234567890", profile.getPhone());
+        verify(sellerProfileRepository).save(profile);
+    }
 }
