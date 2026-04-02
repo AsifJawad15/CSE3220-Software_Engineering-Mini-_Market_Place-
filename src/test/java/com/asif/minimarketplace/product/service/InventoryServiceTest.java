@@ -69,4 +69,25 @@ class InventoryServiceTest {
         assertEquals(50, product.getStockQuantity()); // Stock remains unchanged
         verify(productRepository, never()).save(product);
     }
+
+    @Test
+    void increaseStock_Works() {
+        when(productService.findById(10L)).thenReturn(product);
+
+        inventoryService.increaseStock(10L, 15);
+
+        assertEquals(65, product.getStockQuantity());
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void multipleDecreases_ProduceCorrectFinalQuantity() {
+        when(productService.findById(10L)).thenReturn(product);
+
+        inventoryService.decreaseStock(10L, 10);
+        inventoryService.decreaseStock(10L, 20);
+
+        assertEquals(20, product.getStockQuantity());
+        verify(productRepository, times(2)).save(product);
+    }
 }
