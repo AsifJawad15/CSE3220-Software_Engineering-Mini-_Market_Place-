@@ -59,4 +59,14 @@ class InventoryServiceTest {
         assertEquals(30, product.getStockQuantity());
         verify(productRepository).save(product);
     }
+
+    @Test
+    void decreaseStock_CannotGoBelowZero() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        assertThrows(InsufficientStockException.class, () -> inventoryService.decreaseStock(10L, 60));
+        
+        assertEquals(50, product.getStockQuantity()); // Stock remains unchanged
+        verify(productRepository, never()).save(product);
+    }
 }
