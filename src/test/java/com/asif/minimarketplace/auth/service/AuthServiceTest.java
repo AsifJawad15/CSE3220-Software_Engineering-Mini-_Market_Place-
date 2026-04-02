@@ -72,6 +72,7 @@ class AuthServiceTest {
 
         assertNotNull(result);
         assertEquals(user.getEmail(), result.getEmail());
+        verify(passwordEncoder, times(1)).encode("password");
         verify(userRepository, times(1)).save(any(User.class));
         verify(buyerProfileService, times(1)).createProfile(any(User.class));
     }
@@ -97,6 +98,8 @@ class AuthServiceTest {
         });
 
         assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
+        verify(buyerProfileService, never()).createProfile(any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -123,8 +126,9 @@ class AuthServiceTest {
 
         assertNotNull(result);
         assertEquals(user.getEmail(), result.getEmail());
+        verify(passwordEncoder, times(1)).encode("password");
         verify(userRepository, times(1)).save(any(User.class));
-        verify(sellerProfileService, times(1)).createProfile(any(User.class), anyString());
+        verify(sellerProfileService, times(1)).createProfile(any(User.class), eq("Test Shop"));
     }
 
     @Test
@@ -136,6 +140,8 @@ class AuthServiceTest {
         });
 
         assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
+        verify(sellerProfileService, never()).createProfile(any(), anyString());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
