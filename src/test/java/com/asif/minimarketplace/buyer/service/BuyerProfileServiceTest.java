@@ -213,6 +213,20 @@ class BuyerProfileServiceTest {
     }
 
     @Test
+    void deleteAddress_AccessDenied() {
+        BuyerProfile otherProfile = new BuyerProfile();
+        otherProfile.setId(20L);
+        Address otherAddress = new Address();
+        otherAddress.setId(100L);
+        otherAddress.setBuyerProfile(otherProfile);
+
+        when(buyerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
+        when(addressRepository.findById(100L)).thenReturn(Optional.of(otherAddress));
+
+        assertThrows(AccessDeniedException.class, () -> buyerProfileService.deleteAddress(1L, 100L));
+    }
+
+    @Test
     void setDefaultAddress_Success() {
         address.setDefaultAddress(false);
         when(buyerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
