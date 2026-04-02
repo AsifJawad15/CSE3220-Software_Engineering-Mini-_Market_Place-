@@ -91,4 +91,18 @@ class ProductServiceTest {
         verify(categoryService).findById(5L);
         verify(productRepository).save(any(Product.class));
     }
+
+    @Test
+    void update_UpdatesAndReturnsProduct() {
+        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(categoryService.findById(5L)).thenReturn(category);
+        when(productRepository.save(any(Product.class))).thenReturn(product);
+
+        Product result = productService.update(100L, productRequest, seller);
+
+        assertNotNull(result);
+        assertEquals("Smartphone Update", product.getName());
+        assertEquals(new BigDecimal("550.00"), product.getPrice());
+        verify(productRepository).save(product);
+    }
 }
