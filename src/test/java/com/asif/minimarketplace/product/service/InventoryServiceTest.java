@@ -10,74 +10,84 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
 
-    @Mock private ProductRepository productRepository;
-    @Mock private ProductService productService;
+    @Mock
+    private ProductRepository productRepository;
 
-    @InjectMocks private InventoryService inventoryService;
+    @Mock
+    private ProductService productService;
+
+    @InjectMocks
+    private InventoryService inventoryService;
 
     private Product product;
 
     @BeforeEach
     void setUp() {
-        product = Product.builder()
-                .name("Widget")
-                .price(BigDecimal.TEN)
-                .stockQuantity(20)
-                .active(true)
-                .build();
-        product.setId(1L);
+        product = new Product();
+        product.setId(10L);
+        product.setName("Test Product");
+        product.setStockQuantity(50);
     }
 
     @Test
-    void validateStock_sufficient_noException() {
-        when(productService.findById(1L)).thenReturn(product);
-        assertThatCode(() -> inventoryService.validateStock(1L, 10))
-                .doesNotThrowAnyException();
+    void validateStock_PassesWhenEnoughStock() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        assertDoesNotThrow(() -> inventoryService.validateStock(10L, 20));
     }
 
     @Test
-    void validateStock_insufficient_throwsException() {
-        when(productService.findById(1L)).thenReturn(product);
-        assertThatThrownBy(() -> inventoryService.validateStock(1L, 100))
-                .isInstanceOf(InsufficientStockException.class);
+    void validateStock_FailsWhenInsufficientStock() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        assertThrows(InsufficientStockException.class, () -> inventoryService.validateStock(10L, 60));
     }
 
     @Test
-    void decreaseStock_sufficient_updatesQuantity() {
-        when(productService.findById(1L)).thenReturn(product);
-        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+    void decreaseStock_Works() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        inventoryService.decreaseStock(10L, 20);
 
-        inventoryService.decreaseStock(1L, 5);
-        assertThat(product.getStockQuantity()).isEqualTo(15);
+        assertEquals(30, product.getStockQuantity());
         verify(productRepository).save(product);
     }
 
     @Test
-    void decreaseStock_insufficient_throwsException() {
-        when(productService.findById(1L)).thenReturn(product);
-
-        assertThatThrownBy(() -> inventoryService.decreaseStock(1L, 25))
-                .isInstanceOf(InsufficientStockException.class);
-        verify(productRepository, never()).save(any());
+    void decreaseStock_CannotGoBelowZero() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        assertThrows(InsufficientStockException.class, () -> inventoryService.decreaseStock(10L, 60));
+        
+        assertEquals(50, product.getStockQuantity()); // Stock remains unchanged
+        verify(productRepository, never()).save(product);
     }
 
     @Test
-    void increaseStock_addsQuantity() {
-        when(productService.findById(1L)).thenReturn(product);
-        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+    void increaseStock_Works() {
+        when(productService.findById(10L)).thenReturn(product);
 
-        inventoryService.increaseStock(1L, 10);
-        assertThat(product.getStockQuantity()).isEqualTo(30);
+        inventoryService.increaseStock(10L, 15);
+
+        assertEquals(65, product.getStockQuantity());
         verify(productRepository).save(product);
+    }
+
+    @Test
+    void multipleDecreases_ProduceCorrectFinalQuantity() {
+        when(productService.findById(10L)).thenReturn(product);
+
+        inventoryService.decreaseStock(10L, 10);
+        inventoryService.decreaseStock(10L, 20);
+
+        assertEquals(20, product.getStockQuantity());
+        verify(productRepository, times(2)).save(product);
     }
 }
-
