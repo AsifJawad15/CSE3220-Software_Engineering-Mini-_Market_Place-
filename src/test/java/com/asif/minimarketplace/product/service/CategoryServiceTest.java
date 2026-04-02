@@ -103,4 +103,13 @@ class CategoryServiceTest {
 
         assertTrue(result);
     }
+
+    @Test
+    void existsByName_ReturnsFalseWhenNotExists() {
+        when(categoryRepository.existsByName("Missing")).thenReturn(false);
+
+        boolean result = categoryService.existsByName("Missing");
+
+        assertFalse(result);
+    }
 }
