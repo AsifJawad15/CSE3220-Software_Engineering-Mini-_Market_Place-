@@ -116,4 +116,15 @@ class ProductServiceTest {
         assertFalse(result.isEmpty());
         assertTrue(result.getContent().get(0).isActive());
     }
+
+    @Test
+    void findActiveByCategory_Works() {
+        org.springframework.data.domain.Page<Product> page = new org.springframework.data.domain.PageImpl<>(java.util.Collections.singletonList(product));
+        when(productRepository.findByActiveTrueAndCategoryId(eq(5L), any())).thenReturn(page);
+
+        org.springframework.data.domain.Page<Product> result = productService.findActiveByCategory(5L, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertFalse(result.isEmpty());
+        assertEquals(5L, result.getContent().get(0).getCategory().getId());
+    }
 }
