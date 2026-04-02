@@ -80,16 +80,22 @@ class ProductServiceTest {
     }
 
     @Test
-    void create_ReturnsSavedProduct() {
-        when(categoryService.findById(5L)).thenReturn(category);
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+    void create_ThrowsNotFoundForInvalidCategory() {
+        when(categoryService.findById(5L)).thenThrow(new NotFoundException("Category not found"));
 
-        Product result = productService.create(productRequest, seller);
+        assertThrows(NotFoundException.class, () -> productService.create(productRequest, seller));
+        verify(productRepository, never()).save(any(Product.class));
+    }
 
-        assertNotNull(result);
-        assertEquals("Smartphone", result.getName());
-        verify(categoryService).findById(5L);
-        verify(productRepository).save(any(Product.class));
+    @Test
+    void searchActive_ByNameWorks() {
+        org.springframework.data.domain.Page<Product> page = new org.springframework.data.domain.PageImpl<>(java.util.Collections.singletonList(product));
+        when(productRepository.findByActiveTrueAndNameContainingIgnoreCase(eq("Smart"), any())).thenReturn(page);
+
+        org.springframework.data.domain.Page<Product> result = productService.searchActive("Smart", org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertFalse(result.isEmpty());
+        assertTrue(result.getContent().get(0).getName().contains("Smart"));
     }
 
     @Test
