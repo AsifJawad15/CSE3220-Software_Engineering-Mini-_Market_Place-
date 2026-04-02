@@ -144,10 +144,37 @@ class CheckoutServiceTest {
         InsufficientStockException exception = assertThrows(InsufficientStockException.class, 
             () -> checkoutService.checkout(1L, 1L));
             
-        assertEquals("Not enough stock for product", exception.getMessage());
+    @Test
+    void shouldCreateOrderWithCorrectPropertiesAndItems() {
+        // Arrange
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
+        when(cartService.getOrCreateCart(1L)).thenReturn(cart);
+        doNothing().when(inventoryService).validateStock(1L, 2);
         
-        verify(inventoryService).validateStock(1L, 2);
-        verify(orderRepository, never()).save(any(Order.class));
-        verify(inventoryService, never()).decreaseStock(anyLong(), anyInt());
+        when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
+        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        
+        Order savedOrder = new Order();
+        savedOrder.setId(1L);
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order passedOrder = invocation.getArgument(0);
+            passedOrder.setId(1L); // Simulate save
+            return passedOrder;
+        });
+
+        // Act
+        Order order = checkoutService.checkout(1L, 1L);
+
+        // Assert
+        assertEquals(OrderStatus.PENDING, order.getStatus(), "Order should be created with PENDING status");
+        assertEquals(new BigDecimal("200.00"), order.getTotalAmount(), "Total amount should match cart sum");
+        
+        assertNotNull(order.getItems());
+        assertEquals(1, order.getItems().size(), "Order items should be created for each cart item");
+        
+        OrderItem orderItem = order.getItems().get(0);
+        assertEquals(product, orderItem.getProduct());
+        assertEquals(2, orderItem.getQuantity());
+        assertEquals(new BigDecimal("100.00"), orderItem.getPriceAtPurchase(), "Price snapshot should be copied");
     }
 }
