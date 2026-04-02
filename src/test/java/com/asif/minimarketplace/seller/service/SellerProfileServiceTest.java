@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -110,5 +112,17 @@ class SellerProfileServiceTest {
 
         assertEquals(ApprovalStatus.REJECTED, result.getApprovalStatus());
         verify(sellerProfileRepository).save(profile);
+    }
+
+    @Test
+    void listByStatus_ReturnsCorrectSellers() {
+        when(sellerProfileRepository.findByApprovalStatus(ApprovalStatus.PENDING))
+                .thenReturn(Collections.singletonList(profile));
+
+        List<SellerProfile> results = sellerProfileService.findByStatus(ApprovalStatus.PENDING);
+
+        assertFalse(results.isEmpty());
+        assertEquals(1, results.size());
+        assertEquals(ApprovalStatus.PENDING, results.get(0).getApprovalStatus());
     }
 }
