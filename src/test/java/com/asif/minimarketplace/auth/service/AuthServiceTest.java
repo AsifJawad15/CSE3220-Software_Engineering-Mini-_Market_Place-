@@ -148,5 +148,7 @@ class AuthServiceTest {
         });
 
         assertEquals("Validation failed for 'confirmPassword': Passwords do not match", exception.getMessage());
+        verify(sellerProfileService, never()).createProfile(any(), anyString());
+        verify(userRepository, never()).save(any());
     }
 }
