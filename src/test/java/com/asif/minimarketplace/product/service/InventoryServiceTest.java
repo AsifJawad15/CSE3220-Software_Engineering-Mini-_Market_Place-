@@ -42,4 +42,11 @@ class InventoryServiceTest {
         
         assertDoesNotThrow(() -> inventoryService.validateStock(10L, 20));
     }
+
+    @Test
+    void validateStock_FailsWhenInsufficientStock() {
+        when(productService.findById(10L)).thenReturn(product);
+        
+        assertThrows(InsufficientStockException.class, () -> inventoryService.validateStock(10L, 60));
+    }
 }
