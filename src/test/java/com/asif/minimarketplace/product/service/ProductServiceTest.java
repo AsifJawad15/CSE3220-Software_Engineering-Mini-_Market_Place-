@@ -64,7 +64,7 @@ class ProductServiceTest {
 
     @Test
     void findById_ReturnsCorrectProduct() {
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
 
         Product result = productService.findById(100L);
 
@@ -74,7 +74,7 @@ class ProductServiceTest {
 
     @Test
     void findById_ThrowsNotFoundWhenMissing() {
-        when(productRepository.findById(100L)).thenReturn(Optional.empty());
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> productService.findById(100L));
     }
@@ -102,14 +102,14 @@ class ProductServiceTest {
     void update_ThrowsAccessDeniedForOtherSeller() {
         SellerProfile otherSeller = new SellerProfile();
         otherSeller.setId(99L);
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
 
         assertThrows(AccessDeniedException.class, () -> productService.update(100L, productRequest, otherSeller));
     }
 
     @Test
     void delete_DeletesOwnProduct() {
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
 
         productService.delete(100L, seller);
 
@@ -120,14 +120,14 @@ class ProductServiceTest {
     void delete_ThrowsAccessDeniedForOtherSeller() {
         SellerProfile otherSeller = new SellerProfile();
         otherSeller.setId(99L);
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
 
         assertThrows(AccessDeniedException.class, () -> productService.delete(100L, otherSeller));
     }
 
     @Test
     void update_UpdatesAndReturnsProduct() {
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
         when(categoryService.findById(5L)).thenReturn(category);
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
@@ -163,7 +163,7 @@ class ProductServiceTest {
 
     @Test
     void toggleActive_TogglesActiveStatus() {
-        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
         when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArgument(0));
 
         boolean initialStatus = product.isActive();
