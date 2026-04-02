@@ -77,6 +77,18 @@ class AuthServiceTest {
     }
 
     @Test
+    void registerBuyer_EmailIsNormalized() {
+        buyerRequest.setEmail("  MixedCASE@Test.com  ");
+        when(userRepository.existsByEmail("mixedcase@test.com")).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        User result = authService.registerBuyer(buyerRequest);
+
+        assertEquals("mixedcase@test.com", result.getEmail());
+    }
+
+    @Test
     void registerBuyer_EmailExists() {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
