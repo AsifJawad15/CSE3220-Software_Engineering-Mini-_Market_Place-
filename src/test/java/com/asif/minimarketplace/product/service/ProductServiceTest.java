@@ -160,4 +160,43 @@ class ProductServiceTest {
         assertFalse(result.isEmpty());
         assertEquals(5L, result.getContent().get(0).getCategory().getId());
     }
+
+    @Test
+    void toggleActive_TogglesActiveStatus() {
+        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenAnswer(i -> i.getArgument(0));
+
+        boolean initialStatus = product.isActive();
+        Product toggled = productService.toggleActive(100L);
+
+        assertNotEquals(initialStatus, toggled.isActive());
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void countBySeller_Works() {
+        when(productRepository.countBySellerId(10L)).thenReturn(5L);
+
+        long count = productService.countBySeller(10L);
+
+        assertEquals(5L, count);
+    }
+
+    @Test
+    void countActive_Works() {
+        when(productRepository.countByActiveTrue()).thenReturn(15L);
+
+        long count = productService.countActive();
+
+        assertEquals(15L, count);
+    }
+
+    @Test
+    void countTotal_Works() {
+        when(productRepository.count()).thenReturn(30L);
+
+        long count = productService.countTotal();
+
+        assertEquals(30L, count);
+    }
 }
