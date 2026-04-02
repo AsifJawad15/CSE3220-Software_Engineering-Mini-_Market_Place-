@@ -94,19 +94,15 @@ public class CheckoutService {
     }
 
     private String buildShippingAddress(BuyerProfile profile, Long addressId) {
-        if (addressId != null) {
-            try {
-                List<Address> addresses = buyerProfileService.getAddresses(profile.getUser().getId());
-                return addresses.stream()
-                        .filter(a -> a.getId().equals(addressId))
-                        .findFirst()
-                        .map(a -> a.getLine1() + ", " + a.getCity() + ", " + a.getPostal() + ", " + a.getCountry())
-                        .orElse("Address not found");
-            } catch (Exception e) {
-                return "Default Address";
-            }
+        if (addressId == null) {
+            throw new IllegalArgumentException("Address is required");
         }
-        return "Default Address";
-    }
+        
+        List<Address> addresses = buyerProfileService.getAddresses(profile.getUser().getId());
+        return addresses.stream()
+                .filter(a -> a.getId().equals(addressId))   
+                .findFirst()
+                .map(a -> a.getLine1() + ", " + a.getCity() + ", " + a.getPostal() + ", " + a.getCountry())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid address or address belongs to another buyer"));
 }
 
