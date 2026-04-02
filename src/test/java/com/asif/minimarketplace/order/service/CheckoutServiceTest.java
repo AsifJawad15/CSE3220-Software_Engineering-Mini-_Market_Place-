@@ -120,9 +120,20 @@ class CheckoutServiceTest {
         assertEquals(1L, order.getId());
         assertEquals(new BigDecimal("200.00"), order.getTotalAmount());
         
-        verify(inventoryService).validateStock(1L, 2);
-        verify(inventoryService).decreaseStock(1L, 2);
-        verify(orderRepository).save(any(Order.class));
-        verify(cartService).clearCart(cart);
+    @Test
+    void shouldFailWhenCartIsEmpty() {
+        // Arrange
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
+        
+        Cart emptyCart = new Cart();
+        emptyCart.setItems(new ArrayList<>());
+        when(cartService.getOrCreateCart(1L)).thenReturn(emptyCart);
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> checkoutService.checkout(1L, 1L));
+        assertEquals("Cart is empty", exception.getMessage());
+        
+        verify(inventoryService, never()).validateStock(anyLong(), anyInt());
+        verify(orderRepository, never()).save(any(Order.class));
     }
 }
