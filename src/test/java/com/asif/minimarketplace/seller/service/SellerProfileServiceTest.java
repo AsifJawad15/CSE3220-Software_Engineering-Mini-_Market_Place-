@@ -55,4 +55,21 @@ class SellerProfileServiceTest {
         assertEquals("Initial Shop", result.getShopName());
         verify(sellerProfileRepository).save(any(SellerProfile.class));
     }
+
+    @Test
+    void getProfileByUserId_Success() {
+        when(sellerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
+
+        SellerProfile result = sellerProfileService.getProfileByUserId(1L);
+
+        assertNotNull(result);
+        assertEquals(profile.getId(), result.getId());
+    }
+
+    @Test
+    void getProfileByUserId_NotFound() {
+        when(sellerProfileRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> sellerProfileService.getProfileByUserId(1L));
+    }
 }
