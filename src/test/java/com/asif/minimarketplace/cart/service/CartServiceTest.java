@@ -20,124 +20,210 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
 
-    @Mock private CartRepository cartRepository;
-    @Mock private BuyerProfileService buyerProfileService;
-    @Mock private ProductService productService;
+    @Mock
+    private CartRepository cartRepository;
 
-    @InjectMocks private CartService cartService;
+    @Mock
+    private BuyerProfileService buyerProfileService;
 
-    private BuyerProfile buyerProfile;
+    @Mock
+    private ProductService productService;
+
+    @InjectMocks
+    private CartService cartService;
+
+    private BuyerProfile profile;
     private Cart cart;
     private Product product;
+    private CartItem cartItem;
 
     @BeforeEach
     void setUp() {
-        buyerProfile = new BuyerProfile();
-        buyerProfile.setId(1L);
+        profile = new BuyerProfile();
+        profile.setId(10L);
 
-        cart = Cart.builder().buyerProfile(buyerProfile).items(new ArrayList<>()).build();
-        cart.setId(1L);
+        cart = new Cart();
+        cart.setId(100L);
+        cart.setBuyerProfile(profile);
+        cart.setItems(new ArrayList<>());
 
-        product = Product.builder()
-                .name("Test Product")
-                .price(BigDecimal.valueOf(25.00))
-                .stockQuantity(100)
-                .active(true)
-                .build();
-        product.setId(1L);
+        product = new Product();
+        product.setId(50L);
+        product.setActive(true);
+        product.setStockQuantity(20);
+        product.setPrice(new BigDecimal("10.00"));
+
+        cartItem = new CartItem();
+        cartItem.setId(200L);
+        cartItem.setProduct(product);
+        cartItem.setQuantity(2);
+        cartItem.setUnitPriceSnapshot(new BigDecimal("10.00"));
     }
 
     @Test
-    void getOrCreateCart_existingCart_returnsIt() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
+    void getOrCreateCart_ReturnsExistingCart() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
 
         Cart result = cartService.getOrCreateCart(1L);
-        assertThat(result.getId()).isEqualTo(1L);
-        verify(cartRepository, never()).save(any());
+
+        assertEquals(100L, result.getId());
+        verify(cartRepository, never()).save(any(Cart.class));
     }
 
     @Test
-    void getOrCreateCart_noCart_createsNew() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.empty());
-        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> {
-            Cart c = inv.getArgument(0);
-            c.setId(2L);
+    void getOrCreateCart_CreatesMissingCart() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(i -> {
+            Cart c = i.getArgument(0);
+            c.setId(101L);
             return c;
         });
 
         Cart result = cartService.getOrCreateCart(1L);
-        assertThat(result.getId()).isEqualTo(2L);
+
+        assertEquals(101L, result.getId());
+        assertEquals(profile, result.getBuyerProfile());
         verify(cartRepository).save(any(Cart.class));
     }
 
     @Test
-    void addItem_newItem_success() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
-        when(productService.findById(1L)).thenReturn(product);
-        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+    void addItem_AddNewItemWorks() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        when(productService.findById(50L)).thenReturn(product);
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
 
-        Cart result = cartService.addItem(1L, 1L, 2);
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0).getQuantity()).isEqualTo(2);
+        Cart result = cartService.addItem(1L, 50L, 2);
+
+        assertEquals(1, result.getItems().size());
+        assertEquals(50L, result.getItems().get(0).getProduct().getId());
+        assertEquals(2, result.getItems().get(0).getQuantity());
     }
 
     @Test
-    void addItem_inactiveProduct_throwsNotFound() {
+    void addItem_AddingSameProductIncreasesQuantity() {
+        cart.getItems().add(cartItem);
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        when(productService.findById(50L)).thenReturn(product);
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+        Cart result = cartService.addItem(1L, 50L, 5);
+
+        assertEquals(1, result.getItems().size());
+        assertEquals(7, result.getItems().get(0).getQuantity());
+    }
+
+    @Test
+    void addItem_ThrowsIfProductInactive() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        
         product.setActive(false);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
-        when(productService.findById(1L)).thenReturn(product);
+        when(productService.findById(50L)).thenReturn(product);
 
-        assertThatThrownBy(() -> cartService.addItem(1L, 1L, 1))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("not available");
+        assertThrows(NotFoundException.class, () -> cartService.addItem(1L, 50L, 1));
     }
 
     @Test
-    void addItem_insufficientStock_throwsException() {
-        product.setStockQuantity(1);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
-        when(productService.findById(1L)).thenReturn(product);
+    void addItem_ThrowsIfOutOfStock() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        
+        product.setStockQuantity(0);
+        when(productService.findById(50L)).thenReturn(product);
 
-        assertThatThrownBy(() -> cartService.addItem(1L, 1L, 5))
-                .isInstanceOf(InsufficientStockException.class);
+        assertThrows(InsufficientStockException.class, () -> cartService.addItem(1L, 50L, 1));
     }
 
     @Test
-    void calculateTotal_returnsCorrectSum() {
-        CartItem item1 = CartItem.builder().quantity(2).unitPriceSnapshot(BigDecimal.valueOf(10.00)).build();
-        CartItem item2 = CartItem.builder().quantity(3).unitPriceSnapshot(BigDecimal.valueOf(5.00)).build();
+    void updateItemQuantity_ValidNumberWorks() {
+        cart.getItems().add(cartItem);
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+        Cart result = cartService.updateItemQuantity(1L, 200L, 5);
+
+        assertEquals(5, result.getItems().get(0).getQuantity());
+    }
+
+    @Test
+    void updateItemQuantity_AboveStockFails() {
+        cart.getItems().add(cartItem);
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+
+        assertThrows(InsufficientStockException.class, () -> cartService.updateItemQuantity(1L, 200L, 25));
+    }
+
+    @Test
+    void updateItemQuantity_ZeroRemovesItem() {
+        cart.getItems().add(cartItem);
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+        Cart result = cartService.updateItemQuantity(1L, 200L, 0);
+
+        assertTrue(result.getItems().isEmpty());
+    }
+
+    @Test
+    void updateItemQuantity_MissingItemThrowsNotFound() {
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+
+        assertThrows(NotFoundException.class, () -> cartService.updateItemQuantity(1L, 999L, 2));
+    }
+
+    @Test
+    void removeItem_SpecificItemWorks() {
+        cart.getItems().add(cartItem);
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
+        Cart result = cartService.removeItem(1L, 200L);
+
+        assertTrue(result.getItems().isEmpty());
+    }
+
+    @Test
+    void clearCart_RemovesAllItems() {
+        cart.getItems().add(cartItem);
+        when(cartRepository.save(any(Cart.class))).thenAnswer(i -> i.getArgument(0));
+
+        cartService.clearCart(cart);
+
+        assertTrue(cart.getItems().isEmpty());
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void calculateTotal_CorrectWithSnapshot() {
+        CartItem item1 = new CartItem();
+        item1.setQuantity(2);
+        item1.setUnitPriceSnapshot(new BigDecimal("15.00")); // 30.00
+        
+        CartItem item2 = new CartItem();
+        item2.setQuantity(3);
+        item2.setUnitPriceSnapshot(new BigDecimal("10.00")); // 30.00
+
         cart.getItems().add(item1);
         cart.getItems().add(item2);
 
         BigDecimal total = cartService.calculateTotal(cart);
-        assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(35.00));
-    }
 
-    @Test
-    void removeItem_removesCorrectItem() {
-        CartItem item = CartItem.builder().cart(cart).product(product).quantity(1)
-                .unitPriceSnapshot(BigDecimal.TEN).build();
-        item.setId(10L);
-        cart.getItems().add(item);
-
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
-        when(cartRepository.findByBuyerProfileIdWithItems(1L)).thenReturn(Optional.of(cart));
-        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Cart result = cartService.removeItem(1L, 10L);
-        assertThat(result.getItems()).isEmpty();
+        assertEquals(new BigDecimal("60.00"), total);
     }
 }
-

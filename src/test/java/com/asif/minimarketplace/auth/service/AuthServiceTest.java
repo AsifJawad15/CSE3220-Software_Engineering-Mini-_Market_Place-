@@ -16,99 +16,145 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private BuyerProfileService buyerProfileService;
-    @Mock private SellerProfileService sellerProfileService;
+    @Mock
+    private UserRepository userRepository;
 
-    @InjectMocks private AuthService authService;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private BuyerProfileService buyerProfileService;
+
+    @Mock
+    private SellerProfileService sellerProfileService;
+
+    @InjectMocks
+    private AuthService authService;
 
     private RegisterBuyerRequest buyerRequest;
     private RegisterSellerRequest sellerRequest;
+    private User user;
 
     @BeforeEach
     void setUp() {
         buyerRequest = new RegisterBuyerRequest();
-        buyerRequest.setFullName("John Doe");
-        buyerRequest.setEmail("john@example.com");
-        buyerRequest.setPassword("password123");
-        buyerRequest.setConfirmPassword("password123");
+        buyerRequest.setFullName("Test Buyer");
+        buyerRequest.setEmail("buyer@test.com");
+        buyerRequest.setPassword("password");
+        buyerRequest.setConfirmPassword("password");
 
         sellerRequest = new RegisterSellerRequest();
-        sellerRequest.setFullName("Jane Seller");
-        sellerRequest.setEmail("jane@example.com");
-        sellerRequest.setPassword("password123");
-        sellerRequest.setConfirmPassword("password123");
-        sellerRequest.setShopName("Jane's Shop");
+        sellerRequest.setFullName("Test Seller");
+        sellerRequest.setEmail("seller@test.com");
+        sellerRequest.setPassword("password");
+        sellerRequest.setConfirmPassword("password");
+        sellerRequest.setShopName("Test Shop");
+
+        user = new User();
+        user.setId(1L);
+        user.setEmail("user@test.com");
     }
 
     @Test
-    void registerBuyer_success() {
+    void registerBuyer_Success() {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        User saved = User.builder().fullName("John Doe").email("john@example.com")
-                .password("encodedPassword").role(RoleName.BUYER).enabled(true).build();
-        saved.setId(1L);
-        when(userRepository.save(any(User.class))).thenReturn(saved);
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
         User result = authService.registerBuyer(buyerRequest);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getRole()).isEqualTo(RoleName.BUYER);
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
-        verify(buyerProfileService).createProfile(saved);
-        verify(userRepository).save(any(User.class));
+        assertNotNull(result);
+        assertEquals(user.getEmail(), result.getEmail());
+        verify(passwordEncoder, times(1)).encode("password");
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(buyerProfileService, times(1)).createProfile(any(User.class));
     }
 
     @Test
-    void registerBuyer_duplicateEmail_throwsValidation() {
+    void registerBuyer_EmailIsNormalized() {
+        buyerRequest.setEmail("  MixedCASE@Test.com  ");
+        when(userRepository.existsByEmail("mixedcase@test.com")).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        User result = authService.registerBuyer(buyerRequest);
+
+        assertEquals("mixedcase@test.com", result.getEmail());
+    }
+
+    @Test
+    void registerBuyer_EmailExists() {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.registerBuyer(buyerRequest))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("already exists");
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            authService.registerBuyer(buyerRequest);
+        });
+
+        assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
+        verify(buyerProfileService, never()).createProfile(any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
-    void registerBuyer_passwordMismatch_throwsValidation() {
+    void registerBuyer_PasswordsDoNotMatch() {
+        buyerRequest.setConfirmPassword("wrongPassword");
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        buyerRequest.setConfirmPassword("differentPassword");
 
-        assertThatThrownBy(() -> authService.registerBuyer(buyerRequest))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Passwords do not match");
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            authService.registerBuyer(buyerRequest);
+        });
+
+        assertEquals("Validation failed for 'confirmPassword': Passwords do not match", exception.getMessage());
+        verify(buyerProfileService, never()).createProfile(any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test
-    void registerSeller_success() {
+    void registerSeller_Success() {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        User saved = User.builder().fullName("Jane Seller").email("jane@example.com")
-                .password("encodedPassword").role(RoleName.SELLER).enabled(true).build();
-        saved.setId(2L);
-        when(userRepository.save(any(User.class))).thenReturn(saved);
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
         User result = authService.registerSeller(sellerRequest);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getRole()).isEqualTo(RoleName.SELLER);
-        verify(sellerProfileService).createProfile(saved, "Jane's Shop");
+        assertNotNull(result);
+        assertEquals(user.getEmail(), result.getEmail());
+        verify(passwordEncoder, times(1)).encode("password");
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(sellerProfileService, times(1)).createProfile(any(User.class), eq("Test Shop"));
     }
 
     @Test
-    void registerSeller_duplicateEmail_throwsValidation() {
+    void registerSeller_EmailExists() {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.registerSeller(sellerRequest))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("already exists");
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            authService.registerSeller(sellerRequest);
+        });
+
+        assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
+        verify(sellerProfileService, never()).createProfile(any(), anyString());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void registerSeller_PasswordsDoNotMatch() {
+        sellerRequest.setConfirmPassword("wrongPassword");
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            authService.registerSeller(sellerRequest);
+        });
+
+        assertEquals("Validation failed for 'confirmPassword': Passwords do not match", exception.getMessage());
+        verify(sellerProfileService, never()).createProfile(any(), anyString());
+        verify(userRepository, never()).save(any());
     }
 }
-
