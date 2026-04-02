@@ -149,6 +149,7 @@ class BuyerProfileServiceTest {
         when(addressRepository.findById(100L)).thenReturn(Optional.of(address));
         when(addressRepository.save(any(Address.class))).thenReturn(address);
 
+        address.setDefaultAddress(false);
         addressRequest.setMakeDefault(true);
         when(buyerProfileRepository.save(any(BuyerProfile.class))).thenReturn(profile);
 

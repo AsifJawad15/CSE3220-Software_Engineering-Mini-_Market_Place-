@@ -84,8 +84,7 @@ class AuthServiceTest {
             authService.registerBuyer(buyerRequest);
         });
 
-        assertEquals("email", exception.getField());
-        assertEquals("An account with this email already exists", exception.getMessage());
+        assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
     }
 
     @Test
@@ -97,8 +96,7 @@ class AuthServiceTest {
             authService.registerBuyer(buyerRequest);
         });
 
-        assertEquals("confirmPassword", exception.getField());
-        assertEquals("Passwords do not match", exception.getMessage());
+        assertEquals("Validation failed for 'confirmPassword': Passwords do not match", exception.getMessage());
     }
 
     @Test
@@ -123,8 +121,7 @@ class AuthServiceTest {
             authService.registerSeller(sellerRequest);
         });
 
-        assertEquals("email", exception.getField());
-        assertEquals("An account with this email already exists", exception.getMessage());
+        assertEquals("Validation failed for 'email': An account with this email already exists", exception.getMessage());
     }
 
     @Test
@@ -136,7 +133,6 @@ class AuthServiceTest {
             authService.registerSeller(sellerRequest);
         });
 
-        assertEquals("confirmPassword", exception.getField());
-        assertEquals("Passwords do not match", exception.getMessage());
+        assertEquals("Validation failed for 'confirmPassword': Passwords do not match", exception.getMessage());
     }
 }
