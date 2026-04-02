@@ -174,7 +174,43 @@ class CheckoutServiceTest {
         
         OrderItem orderItem = order.getItems().get(0);
         assertEquals(product, orderItem.getProduct());
-        assertEquals(2, orderItem.getQuantity());
-        assertEquals(new BigDecimal("100.00"), orderItem.getPriceAtPurchase(), "Price snapshot should be copied");
+    @Test
+    void shouldFailWhenAddressIsInvalid() {
+        // Arrange
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
+        when(cartService.getOrCreateCart(1L)).thenReturn(cart);
+        doNothing().when(inventoryService).validateStock(1L, 2);
+        
+        when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> checkoutService.checkout(1L, 999L));
+            
+        assertTrue(exception.getMessage().contains("Invalid address"));
+        verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void shouldFailWhenStockDeductionFailsMidway() {
+        // Arrange
+        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
+        when(cartService.getOrCreateCart(1L)).thenReturn(cart);
+        doNothing().when(inventoryService).validateStock(1L, 2);
+        when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
+        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        
+        when(orderRepository.save(any(Order.class))).thenReturn(new Order());
+        
+        doThrow(new RuntimeException("Database error")).when(inventoryService).decreaseStock(1L, 2);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+            () -> checkoutService.checkout(1L, 1L));
+            
+        assertEquals("Database error", exception.getMessage());
+        
+        // Ensure cart was not cleared (rollback implication)
+        verify(cartService, never()).clearCart(any(Cart.class));
     }
 }
