@@ -100,4 +100,15 @@ class SellerProfileServiceTest {
         assertEquals(ApprovalStatus.APPROVED, result.getApprovalStatus());
         verify(sellerProfileRepository).save(profile);
     }
+
+    @Test
+    void rejectSeller_ChangesStatusToRejected() {
+        when(sellerProfileRepository.findById(10L)).thenReturn(Optional.of(profile));
+        when(sellerProfileRepository.save(any(SellerProfile.class))).thenReturn(profile);
+
+        SellerProfile result = sellerProfileService.reject(10L);
+
+        assertEquals(ApprovalStatus.REJECTED, result.getApprovalStatus());
+        verify(sellerProfileRepository).save(profile);
+    }
 }
