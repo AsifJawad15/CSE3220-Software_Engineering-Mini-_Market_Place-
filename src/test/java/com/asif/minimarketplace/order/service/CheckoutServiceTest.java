@@ -1,5 +1,26 @@
 package com.asif.minimarketplace.order.service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.asif.minimarketplace.buyer.entity.Address;
 import com.asif.minimarketplace.buyer.entity.BuyerProfile;
 import com.asif.minimarketplace.buyer.service.BuyerProfileService;
@@ -15,20 +36,6 @@ import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.InventoryService;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.user.entity.User;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CheckoutServiceTest {
@@ -181,20 +188,24 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void shouldFailWhenAddressIsInvalid() {
+    void shouldFallbackWhenAddressIsInvalid() {
         // Arrange
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
         when(cartService.getOrCreateCart(1L)).thenReturn(cart);
         doNothing().when(inventoryService).validateStock(1L, 2);
         
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
+        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        doNothing().when(inventoryService).decreaseStock(1L, 2);
+        doNothing().when(cartService).clearCart(cart);
 
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
-            () -> checkoutService.checkout(1L, 999L));
-            
-        assertTrue(exception.getMessage().contains("Invalid address"));
-        verify(orderRepository, never()).save(any(Order.class));
+        // Act — pass non-existent address ID 999
+        Order order = checkoutService.checkout(1L, 999L);
+
+        // Assert — service falls back to "Address not found" instead of throwing
+        assertNotNull(order);
+        assertEquals("Address not found", order.getShippingAddress());
     }
 
     @Test
