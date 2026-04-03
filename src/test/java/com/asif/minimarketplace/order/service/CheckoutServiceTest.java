@@ -1,26 +1,5 @@
 package com.asif.minimarketplace.order.service;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.any;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.asif.minimarketplace.buyer.entity.Address;
 import com.asif.minimarketplace.buyer.entity.BuyerProfile;
 import com.asif.minimarketplace.buyer.service.BuyerProfileService;
@@ -40,6 +19,21 @@ import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.InventoryService;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.user.entity.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CheckoutServiceTest {
@@ -119,9 +113,8 @@ class CheckoutServiceTest {
         doNothing().when(inventoryService).validateStock(1L, 2);
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
-
         when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
-        when(paymentStrategy.pay(any(), any())).thenReturn(PaymentResult.builder().success(true).build());
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-001", "Payment successful"));
         
         Order savedOrder = new Order();
         savedOrder.setId(1L);
@@ -178,7 +171,8 @@ class CheckoutServiceTest {
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
         when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
-        when(paymentStrategy.pay(any(), any())).thenReturn(PaymentResult.builder().success(true).build());        
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-002", "Payment successful"));
+        
         Order savedOrder = new Order();
         savedOrder.setId(1L);
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
@@ -202,24 +196,29 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void shouldFallbackWhenAddressIsInvalid() {
+    void shouldUseDefaultAddressWhenAddressIdNotFound() {
         // Arrange
         when(buyerProfileService.getProfileByUserId(1L)).thenReturn(buyerProfile);
         when(cartService.getOrCreateCart(1L)).thenReturn(cart);
         doNothing().when(inventoryService).validateStock(1L, 2);
         
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
-        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
-        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
-        when(paymentStrategy.pay(any(), any())).thenReturn(PaymentResult.builder().success(true).build());
-        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-003", "Payment successful"));
+        Order savedOrder = new Order();
+        savedOrder.setId(2L);
+        savedOrder.setTotalAmount(new BigDecimal("200.00"));
+        savedOrder.setStatus(OrderStatus.PENDING);
+        savedOrder.setShippingAddress("Address not found");
+        when(orderRepository.save(any(Order.class))).thenReturn(savedOrder);
+
         doNothing().when(inventoryService).decreaseStock(1L, 2);
         doNothing().when(cartService).clearCart(cart);
 
-        // Act — pass non-existent address ID 999
+        // Act
         Order order = checkoutService.checkout(1L, 999L, PaymentMethod.COD);
 
-        // Assert — service falls back to "Address not found" instead of throwing
+        // Assert — order is created with fallback address text
         assertNotNull(order);
         assertEquals("Address not found", order.getShippingAddress());
     }
@@ -232,9 +231,8 @@ class CheckoutServiceTest {
         doNothing().when(inventoryService).validateStock(1L, 2);
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
-
         when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
-        when(paymentStrategy.pay(any(), any())).thenReturn(PaymentResult.builder().success(true).build());
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-004", "Payment successful"));
         
         when(orderRepository.save(any(Order.class))).thenReturn(new Order());
         
