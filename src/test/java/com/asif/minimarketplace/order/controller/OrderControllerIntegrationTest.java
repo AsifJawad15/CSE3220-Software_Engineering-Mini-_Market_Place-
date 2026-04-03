@@ -1,6 +1,8 @@
 package com.asif.minimarketplace.order.controller;
 
+import com.asif.minimarketplace.buyer.entity.Address;
 import com.asif.minimarketplace.buyer.entity.BuyerProfile;
+import com.asif.minimarketplace.buyer.repository.AddressRepository;
 import com.asif.minimarketplace.buyer.repository.BuyerProfileRepository;
 import com.asif.minimarketplace.cart.entity.Cart;
 import com.asif.minimarketplace.cart.entity.CartItem;
@@ -43,6 +45,7 @@ class OrderControllerIntegrationTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
     @Autowired private BuyerProfileRepository buyerProfileRepository;
+    @Autowired private AddressRepository addressRepository;
     @Autowired private SellerProfileRepository sellerProfileRepository;
     @Autowired private CategoryRepository categoryRepository;
     @Autowired private ProductRepository productRepository;
@@ -131,7 +134,13 @@ class OrderControllerIntegrationTest {
         cart.getItems().add(item);
         cartRepository.save(cart);
 
-        mockMvc.perform(post("/buyer/checkout").with(csrf()))
+        Address address = addressRepository.save(Address.builder()
+                .buyerProfile(buyerProfile)
+                .line1("123 Test St").city("TestCity").postal("12345").country("TestCountry")
+                .build());
+
+        mockMvc.perform(post("/buyer/checkout").with(csrf())
+                        .param("addressId", address.getId().toString()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/buyer/orders"));
     }
