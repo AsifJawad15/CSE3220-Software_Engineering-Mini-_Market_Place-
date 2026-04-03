@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: MiniMarketPlace
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/minimarketplace}
+    username: ${DB_USER:miniuser}
+    password: ${DB_PASS:minipass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: true
+
+  docker:
+    compose:
+      enabled: false
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+
+  data:
+    jpa:
+      repositories:
+        enabled: true
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      tracking-modes: cookie
+    include-binding-errors: always
+
+logging:
+  level:
+    com.asif.minimarketplace: DEBUG
+    org.springframework.security: INFO
