@@ -11,6 +11,10 @@ import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.order.entity.OrderStatus;
 import com.asif.minimarketplace.order.repository.OrderRepository;
+import com.asif.minimarketplace.payment.PaymentMethod;
+import com.asif.minimarketplace.payment.PaymentResult;
+import com.asif.minimarketplace.payment.strategy.PaymentStrategy;
+import com.asif.minimarketplace.payment.strategy.PaymentStrategyFactory;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.InventoryService;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
@@ -28,6 +32,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +49,12 @@ class CheckoutServiceTest {
     
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private PaymentStrategyFactory paymentStrategyFactory;
+
+    @Mock
+    private PaymentStrategy paymentStrategy;
 
     @InjectMocks
     private CheckoutService checkoutService;
@@ -102,6 +113,8 @@ class CheckoutServiceTest {
         doNothing().when(inventoryService).validateStock(1L, 2);
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-001", "Payment successful"));
         
         Order savedOrder = new Order();
         savedOrder.setId(1L);
@@ -113,7 +126,7 @@ class CheckoutServiceTest {
         doNothing().when(cartService).clearCart(cart);
 
         // Act
-        Order order = checkoutService.checkout(1L, 1L);
+        Order order = checkoutService.checkout(1L, 1L, PaymentMethod.COD);
 
         // Assert
         assertNotNull(order);
@@ -131,7 +144,7 @@ class CheckoutServiceTest {
         when(cartService.getOrCreateCart(1L)).thenReturn(emptyCart);
 
         // Act & Assert
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> checkoutService.checkout(1L, 1L));
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> checkoutService.checkout(1L, 1L, PaymentMethod.COD));
     }
 
     @Test
@@ -145,7 +158,7 @@ class CheckoutServiceTest {
 
         // Act & Assert
         InsufficientStockException exception = assertThrows(InsufficientStockException.class, 
-            () -> checkoutService.checkout(1L, 1L));
+            () -> checkoutService.checkout(1L, 1L, PaymentMethod.COD));
     }
 
     @Test
@@ -157,6 +170,8 @@ class CheckoutServiceTest {
         
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-002", "Payment successful"));
         
         Order savedOrder = new Order();
         savedOrder.setId(1L);
@@ -167,7 +182,7 @@ class CheckoutServiceTest {
         });
 
         // Act
-        Order order = checkoutService.checkout(1L, 1L);
+        Order order = checkoutService.checkout(1L, 1L, PaymentMethod.COD);
 
         // Assert
         assertEquals(OrderStatus.PENDING, order.getStatus(), "Order should be created with PENDING status");
@@ -188,8 +203,8 @@ class CheckoutServiceTest {
         doNothing().when(inventoryService).validateStock(1L, 2);
         
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
-        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
-
+        when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-003", "Payment successful"));
         Order savedOrder = new Order();
         savedOrder.setId(2L);
         savedOrder.setTotalAmount(new BigDecimal("200.00"));
@@ -201,7 +216,7 @@ class CheckoutServiceTest {
         doNothing().when(cartService).clearCart(cart);
 
         // Act
-        Order order = checkoutService.checkout(1L, 999L);
+        Order order = checkoutService.checkout(1L, 999L, PaymentMethod.COD);
 
         // Assert — order is created with fallback address text
         assertNotNull(order);
@@ -216,6 +231,8 @@ class CheckoutServiceTest {
         doNothing().when(inventoryService).validateStock(1L, 2);
         when(buyerProfileService.getAddresses(1L)).thenReturn(List.of(address));
         when(cartService.calculateTotal(cart)).thenReturn(new BigDecimal("200.00"));
+        when(paymentStrategyFactory.getStrategy(PaymentMethod.COD)).thenReturn(paymentStrategy);
+        when(paymentStrategy.pay(any(BigDecimal.class), anyString())).thenReturn(new PaymentResult(true, "TXN-004", "Payment successful"));
         
         when(orderRepository.save(any(Order.class))).thenReturn(new Order());
         
@@ -223,7 +240,7 @@ class CheckoutServiceTest {
 
         // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, 
-            () -> checkoutService.checkout(1L, 1L));
+            () -> checkoutService.checkout(1L, 1L, PaymentMethod.COD));
             
         assertEquals("Database error", exception.getMessage());
         
