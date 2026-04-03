@@ -10,6 +10,7 @@ import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.order.service.CheckoutService;
 import com.asif.minimarketplace.order.service.OrderService;
+import com.asif.minimarketplace.payment.PaymentMethod;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.seller.service.SellerProfileService;
 import com.asif.minimarketplace.user.entity.User;
@@ -132,7 +133,7 @@ public class OrderControllerTest {
     @Test
     void placeOrder_Success_RedirectsToOrders() throws Exception {
         mockAuthentication();
-        when(checkoutService.checkout(eq(1L), anyLong())).thenReturn(testOrder);
+        when(checkoutService.checkout(eq(1L), anyLong(), any(PaymentMethod.class))).thenReturn(testOrder);
 
         mockMvc.perform(post("/buyer/checkout")
                         .param("addressId", "1"))
@@ -140,14 +141,14 @@ public class OrderControllerTest {
                 .andExpect(redirectedUrl("/buyer/orders"))
                 .andExpect(flash().attributeExists("successMessage"));
 
-        verify(checkoutService).checkout(1L, 1L);
+        verify(checkoutService).checkout(eq(1L), eq(1L), any(PaymentMethod.class));
     }
 
     // checkout failure shows error and redirects back
     @Test
     void placeOrder_Failure_RedirectsBackWithFlash() throws Exception {
         mockAuthentication();
-        when(checkoutService.checkout(eq(1L), anyLong()))
+        when(checkoutService.checkout(eq(1L), anyLong(), any(PaymentMethod.class)))
                 .thenThrow(new RuntimeException("Insufficient stock"));
 
         mockMvc.perform(post("/buyer/checkout")

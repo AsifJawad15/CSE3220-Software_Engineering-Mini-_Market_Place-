@@ -6,6 +6,7 @@ import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.order.service.CheckoutService;
 import com.asif.minimarketplace.order.service.OrderService;
+import com.asif.minimarketplace.payment.PaymentMethod;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.seller.service.SellerProfileService;
 import com.asif.minimarketplace.user.entity.User;
@@ -93,7 +94,7 @@ public class RestOrderControllerTest {
     @Test
     void checkout_Returns201() throws Exception {
         mockAuthentication();
-        when(checkoutService.checkout(eq(1L), anyLong())).thenReturn(testOrder);
+        when(checkoutService.checkout(eq(1L), anyLong(), any(PaymentMethod.class))).thenReturn(testOrder);
 
         mockMvc.perform(post("/api/buyer/orders/checkout")
                         .param("addressId", "1"))

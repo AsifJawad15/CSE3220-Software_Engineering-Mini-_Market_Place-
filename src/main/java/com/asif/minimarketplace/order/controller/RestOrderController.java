@@ -8,6 +8,7 @@ import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.order.service.CheckoutService;
 import com.asif.minimarketplace.order.service.OrderService;
+import com.asif.minimarketplace.payment.PaymentMethod;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.seller.service.SellerProfileService;
 import com.asif.minimarketplace.user.entity.User;
@@ -53,9 +54,10 @@ public class RestOrderController {
     @PostMapping("/api/buyer/orders/checkout")
     public ResponseEntity<ApiResponse<OrderDTO>> checkout(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(required = false) Long addressId) {
+            @RequestParam(required = false) Long addressId,
+            @RequestParam(defaultValue = "COD") PaymentMethod paymentMethod) {
         User user = getCurrentUser(userDetails);
-        Order order = checkoutService.checkout(user.getId(), addressId);
+        Order order = checkoutService.checkout(user.getId(), addressId, paymentMethod);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Order placed successfully", DtoMapper.toOrder(order)));
     }
