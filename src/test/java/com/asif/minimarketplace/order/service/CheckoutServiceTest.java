@@ -82,7 +82,7 @@ class CheckoutServiceTest {
 
         cart = new Cart();
         cart.setId(1L);
-        cart.setUser(user);
+        cart.setBuyerProfile(buyerProfile);
         cart.setItems(new ArrayList<>(List.of(cartItem)));
 
         address = new Address();
@@ -119,7 +119,8 @@ class CheckoutServiceTest {
         assertNotNull(order);
         assertEquals(1L, order.getId());
         assertEquals(new BigDecimal("200.00"), order.getTotalAmount());
-        
+    }
+
     @Test
     void shouldFailWhenCartIsEmpty() {
         // Arrange
@@ -131,6 +132,8 @@ class CheckoutServiceTest {
 
         // Act & Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> checkoutService.checkout(1L, 1L));
+    }
+
     @Test
     void shouldFailWhenStockIsInsufficient() {
         // Arrange
@@ -143,7 +146,8 @@ class CheckoutServiceTest {
         // Act & Assert
         InsufficientStockException exception = assertThrows(InsufficientStockException.class, 
             () -> checkoutService.checkout(1L, 1L));
-            
+    }
+
     @Test
     void shouldCreateOrderWithCorrectPropertiesAndItems() {
         // Arrange
@@ -174,6 +178,8 @@ class CheckoutServiceTest {
         
         OrderItem orderItem = order.getItems().get(0);
         assertEquals(product, orderItem.getProduct());
+    }
+
     @Test
     void shouldFailWhenAddressIsInvalid() {
         // Arrange

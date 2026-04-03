@@ -83,7 +83,7 @@ class AdminServiceTest {
 
     @Test
     void findAll_returnsAllSellers() {
-        when(sellerProfileRepository.findAllWithUser()).thenReturn(List.of(seller));
+        when(sellerProfileRepository.findAll()).thenReturn(List.of(seller));
 
         List<SellerProfile> result = sellerProfileService.findAll();
         assertThat(result).hasSize(1);

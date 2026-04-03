@@ -104,5 +104,6 @@ public class CheckoutService {
                 .findFirst()
                 .map(a -> a.getLine1() + ", " + a.getCity() + ", " + a.getPostal() + ", " + a.getCountry())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid address or address belongs to another buyer"));
+    }
 }
 
