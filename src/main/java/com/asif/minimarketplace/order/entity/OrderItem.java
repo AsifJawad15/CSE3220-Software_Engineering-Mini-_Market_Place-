@@ -34,5 +34,11 @@ public class OrderItem extends BaseEntity {
 
     @Column(name = "price_at_purchase", nullable = false, precision = 12, scale = 2)
     private BigDecimal priceAtPurchase;
+
+    /** Computed subtotal used in Thymeleaf templates (avoids T() operator which is blocked in Thymeleaf 3.1+). */
+    public BigDecimal getSubtotal() {
+        if (priceAtPurchase == null) return BigDecimal.ZERO;
+        return priceAtPurchase.multiply(BigDecimal.valueOf(quantity));
+    }
 }
 

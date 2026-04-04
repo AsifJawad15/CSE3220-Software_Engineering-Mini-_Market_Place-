@@ -9,6 +9,8 @@ import com.asif.minimarketplace.common.exception.InsufficientStockException;
 import com.asif.minimarketplace.common.exception.NotFoundException;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.ProductService;
+import com.asif.minimarketplace.user.entity.User;
+import com.asif.minimarketplace.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,9 +38,13 @@ class CartServiceTest {
     @Mock
     private ProductService productService;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private CartService cartService;
 
+    private User user;
     private BuyerProfile profile;
     private Cart cart;
     private Product product;
@@ -46,6 +52,9 @@ class CartServiceTest {
 
     @BeforeEach
     void setUp() {
+        user = new User();
+        user.setId(1L);
+
         profile = new BuyerProfile();
         profile.setId(10L);
 
@@ -67,9 +76,15 @@ class CartServiceTest {
         cartItem.setUnitPriceSnapshot(new BigDecimal("10.00"));
     }
 
+    /** Shared stub: user lookup + profile auto-create */
+    private void stubUserAndProfile() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(buyerProfileService.getOrCreateProfile(any(User.class))).thenReturn(profile);
+    }
+
     @Test
     void getOrCreateCart_ReturnsExistingCart() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
 
         Cart result = cartService.getOrCreateCart(1L);
@@ -80,7 +95,7 @@ class CartServiceTest {
 
     @Test
     void getOrCreateCart_CreatesMissingCart() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(i -> {
             Cart c = i.getArgument(0);
@@ -97,7 +112,7 @@ class CartServiceTest {
 
     @Test
     void addItem_AddNewItemWorks() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
         when(productService.findById(50L)).thenReturn(product);
         when(cartRepository.save(any(Cart.class))).thenReturn(cart);
@@ -112,7 +127,7 @@ class CartServiceTest {
     @Test
     void addItem_AddingSameProductIncreasesQuantity() {
         cart.getItems().add(cartItem);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
         when(productService.findById(50L)).thenReturn(product);
         when(cartRepository.save(any(Cart.class))).thenReturn(cart);
@@ -125,9 +140,9 @@ class CartServiceTest {
 
     @Test
     void addItem_ThrowsIfProductInactive() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
-        
+
         product.setActive(false);
         when(productService.findById(50L)).thenReturn(product);
 
@@ -136,9 +151,9 @@ class CartServiceTest {
 
     @Test
     void addItem_ThrowsIfOutOfStock() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
-        
+
         product.setStockQuantity(0);
         when(productService.findById(50L)).thenReturn(product);
 
@@ -148,7 +163,7 @@ class CartServiceTest {
     @Test
     void updateItemQuantity_ValidNumberWorks() {
         cart.getItems().add(cartItem);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenReturn(cart);
 
@@ -160,7 +175,7 @@ class CartServiceTest {
     @Test
     void updateItemQuantity_AboveStockFails() {
         cart.getItems().add(cartItem);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
 
         assertThrows(InsufficientStockException.class, () -> cartService.updateItemQuantity(1L, 200L, 25));
@@ -169,7 +184,7 @@ class CartServiceTest {
     @Test
     void updateItemQuantity_ZeroRemovesItem() {
         cart.getItems().add(cartItem);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenReturn(cart);
 
@@ -180,7 +195,7 @@ class CartServiceTest {
 
     @Test
     void updateItemQuantity_MissingItemThrowsNotFound() {
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
 
         assertThrows(NotFoundException.class, () -> cartService.updateItemQuantity(1L, 999L, 2));
@@ -189,7 +204,7 @@ class CartServiceTest {
     @Test
     void removeItem_SpecificItemWorks() {
         cart.getItems().add(cartItem);
-        when(buyerProfileService.getProfileByUserId(1L)).thenReturn(profile);
+        stubUserAndProfile();
         when(cartRepository.findByBuyerProfileIdWithItems(10L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenReturn(cart);
 
@@ -214,7 +229,7 @@ class CartServiceTest {
         CartItem item1 = new CartItem();
         item1.setQuantity(2);
         item1.setUnitPriceSnapshot(new BigDecimal("15.00")); // 30.00
-        
+
         CartItem item2 = new CartItem();
         item2.setQuantity(3);
         item2.setUnitPriceSnapshot(new BigDecimal("10.00")); // 30.00

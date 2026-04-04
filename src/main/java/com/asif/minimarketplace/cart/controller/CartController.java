@@ -32,12 +32,19 @@ public class CartController {
     // ── View Cart ──────────────────────────────────────────────────────────
     @GetMapping
     public String viewCart(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = getCurrentUser(userDetails);
-        Cart cart = cartService.getOrCreateCart(user.getId());
-        BigDecimal total = cartService.calculateTotal(cart);
-        model.addAttribute("cart", cart);
-        model.addAttribute("cartTotal", total);
-        model.addAttribute("user", user);
+        try {
+            User user = getCurrentUser(userDetails);
+            Cart cart = cartService.getOrCreateCart(user.getId());
+            BigDecimal total = cartService.calculateTotal(cart);
+            model.addAttribute("cart", cart);
+            model.addAttribute("cartTotal", total);
+            model.addAttribute("user", user);
+        } catch (Exception e) {
+            log.error("Error loading cart: {}", e.getMessage(), e);
+            model.addAttribute("cart", null);
+            model.addAttribute("cartTotal", BigDecimal.ZERO);
+            model.addAttribute("errorMessage", "Could not load your cart. Please try again.");
+        }
         return "buyer/cart";
     }
 

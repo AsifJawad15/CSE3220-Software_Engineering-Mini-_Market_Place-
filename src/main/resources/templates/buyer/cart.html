@@ -36,7 +36,7 @@
             </div>
 
             <!-- Empty Cart -->
-            <div th:if="${#lists.isEmpty(cart.items)}" class="text-center py-5">
+            <div th:if="${cart == null or #lists.isEmpty(cart.items)}" class="text-center py-5">
                 <i class="bi bi-cart-x" style="font-size:4rem; color:#adb5bd;"></i>
                 <h4 class="mt-3 text-muted">Your cart is empty</h4>
                 <a th:href="@{/products}" class="btn btn-primary mt-3">
@@ -45,7 +45,7 @@
             </div>
 
             <!-- Cart Items -->
-            <div th:unless="${#lists.isEmpty(cart.items)}">
+            <div th:unless="${cart == null or #lists.isEmpty(cart.items)}">
                 <div class="card shadow-sm mb-4">
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
@@ -79,7 +79,7 @@
                                     </form>
                                 </td>
                                 <td class="align-middle text-center fw-semibold">
-                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}"></span>
+                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}"></span>
                                 </td>
                                 <td class="align-middle text-center">
                                     <form th:action="@{/buyer/cart/remove/{id}(id=${item.id})}" method="post">
