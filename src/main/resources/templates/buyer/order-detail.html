@@ -27,14 +27,23 @@
                 <h4 class="fw-bold mb-0">
                     <i class="bi bi-receipt me-2 text-primary"></i>Order <span th:text="'#' + ${order.id}"></span>
                 </h4>
-                <span th:switch="${order.status.name()}">
-                    <span th:case="'PENDING'" class="badge bg-info fs-6"><i class="bi bi-clock me-1"></i>Order Placed</span>
-                    <span th:case="'CONFIRMED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
-                    <span th:case="'PACKED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
-                    <span th:case="'SHIPPED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
-                    <span th:case="'DELIVERED'" class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>Delivered</span>
-                    <span th:case="'CANCELLED'" class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i>Cancelled</span>
-                </span>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Currency Switcher -->
+                    <div class="d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-currency-exchange text-muted"></i>
+                        <button class="btn btn-sm btn-warning currency-toggle-btn fw-bold" data-currency="BDT" onclick="setCurrency('BDT')">৳ BDT</button>
+                        <button class="btn btn-sm btn-outline-secondary currency-toggle-btn" data-currency="USD" onclick="setCurrency('USD')">$ USD</button>
+                        <small id="exchange-rate-badge" class="text-muted ms-1" style="display:none"></small>
+                    </div>
+                    <span th:switch="${order.status.name()}">
+                        <span th:case="'PENDING'" class="badge bg-info fs-6"><i class="bi bi-clock me-1"></i>Order Placed</span>
+                        <span th:case="'CONFIRMED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
+                        <span th:case="'PACKED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
+                        <span th:case="'SHIPPED'" class="badge bg-primary fs-6"><i class="bi bi-truck me-1"></i>Out for Delivery</span>
+                        <span th:case="'DELIVERED'" class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>Delivered</span>
+                        <span th:case="'CANCELLED'" class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i>Cancelled</span>
+                    </span>
+                </div>
             </div>
 
             <div class="row g-4">
@@ -61,17 +70,21 @@
                                     </td>
                                     <td class="text-muted small" th:text="${item.sellerProfile.shopName}"></td>
                                     <td class="text-center" th:text="${item.quantity}"></td>
-                                    <td class="text-end" th:text="'৳' + ${#numbers.formatDecimal(item.priceAtPurchase,1,2)}"></td>
-                                    <td class="text-end fw-semibold"
-                                        th:text="'৳' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}"></td>
+                                     <td class="text-end"
+                                         th:attr="data-bdt=${item.priceAtPurchase}"
+                                         th:text="'৳' + ${#numbers.formatDecimal(item.priceAtPurchase,1,2)}"></td>
+                                     <td class="text-end fw-semibold"
+                                         th:attr="data-bdt=${item.subtotal}"
+                                         th:text="'৳' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}"></td>
                                 </tr>
                                 </tbody>
                                 <tfoot class="table-light">
-                                <tr>
-                                    <td colspan="4" class="text-end fw-bold">Total</td>
-                                    <td class="text-end fw-bold text-primary"
-                                        th:text="'৳' + ${#numbers.formatDecimal(order.totalAmount,1,2)}"></td>
-                                </tr>
+                                 <tr>
+                                     <td colspan="4" class="text-end fw-bold">Total</td>
+                                     <td class="text-end fw-bold text-primary"
+                                         th:attr="data-bdt=${order.totalAmount}"
+                                         th:text="'৳' + ${#numbers.formatDecimal(order.totalAmount,1,2)}"></td>
+                                 </tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -96,9 +109,10 @@
                                     <span th:case="'CANCELLED'">Cancelled</span>
                                 </span>
                             </p>
-                            <p class="mb-0"><strong>Total:</strong>
-                                <span class="text-primary fw-bold"
-                                      th:text="'৳' + ${#numbers.formatDecimal(order.totalAmount,1,2)}"></span></p>
+                             <p class="mb-0"><strong>Total:</strong>
+                                 <span class="text-primary fw-bold"
+                                       th:attr="data-bdt=${order.totalAmount}"
+                                       th:text="'৳' + ${#numbers.formatDecimal(order.totalAmount,1,2)}"></span></p>
                         </div>
                     </div>
 
@@ -124,5 +138,6 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/currency.js"></script>
 </body>
 </html>
