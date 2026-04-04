@@ -29,5 +29,11 @@ public class CartItem extends BaseEntity {
 
     @Column(name = "unit_price_snapshot", nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPriceSnapshot;
+
+    /** Computed subtotal used in Thymeleaf templates (avoids T() operator which is blocked in Thymeleaf 3.1+). */
+    public BigDecimal getSubtotal() {
+        if (unitPriceSnapshot == null) return BigDecimal.ZERO;
+        return unitPriceSnapshot.multiply(BigDecimal.valueOf(quantity));
+    }
 }
 

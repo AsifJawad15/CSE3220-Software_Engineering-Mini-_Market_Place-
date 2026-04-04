@@ -9,6 +9,8 @@ import com.asif.minimarketplace.common.exception.InsufficientStockException;
 import com.asif.minimarketplace.common.exception.NotFoundException;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.ProductService;
+import com.asif.minimarketplace.user.entity.User;
+import com.asif.minimarketplace.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,13 +27,17 @@ public class CartService {
     private final CartRepository cartRepository;
     private final BuyerProfileService buyerProfileService;
     private final ProductService productService;
+    private final UserRepository userRepository;
 
     /**
      * Get or create a cart for the buyer.
+     * Auto-creates BuyerProfile if missing (handles legacy users created before profile auto-creation).
      */
     @Transactional
     public Cart getOrCreateCart(Long userId) {
-        BuyerProfile profile = buyerProfileService.getProfileByUserId(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        BuyerProfile profile = buyerProfileService.getOrCreateProfile(user);
         // Use eager-loading query so items/products/categories are available outside this transaction
         return cartRepository.findByBuyerProfileIdWithItems(profile.getId())
                 .orElseGet(() -> {
