@@ -39,6 +39,21 @@ public class BuyerProfileService {
                 .orElseThrow(() -> new NotFoundException("Buyer profile not found"));
     }
 
+    /**
+     * Get profile for the given user, or auto-create one if it doesn't exist.
+     * Safer alternative for use in CartService / Dashboard so buyers who were
+     * created before the profile auto-creation was added never see a 500 error.
+     */
+    @Transactional
+    public BuyerProfile getOrCreateProfile(com.asif.minimarketplace.user.entity.User user) {
+        return buyerProfileRepository.findByUserId(user.getId())
+                .orElseGet(() -> {
+                    log.warn("Auto-creating missing BuyerProfile for user id={} email={}", user.getId(), user.getEmail());
+                    BuyerProfile profile = BuyerProfile.builder().user(user).build();
+                    return buyerProfileRepository.save(profile);
+                });
+    }
+
     @Transactional
     public BuyerProfile updateProfile(Long userId, UpdateBuyerProfileRequest request) {
         BuyerProfile profile = getProfileByUserId(userId);
