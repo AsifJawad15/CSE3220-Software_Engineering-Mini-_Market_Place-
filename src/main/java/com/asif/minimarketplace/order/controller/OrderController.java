@@ -7,6 +7,7 @@ import com.asif.minimarketplace.cart.service.CartService;
 import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.order.service.CheckoutService;
+import com.asif.minimarketplace.payment.PaymentMethod;
 import com.asif.minimarketplace.order.service.OrderService;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.seller.service.SellerProfileService;
@@ -54,6 +55,7 @@ public class OrderController {
         model.addAttribute("cart", cart);
         model.addAttribute("cartTotal", total);
         model.addAttribute("addresses", addresses);
+        model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("user", user);
         return "buyer/checkout";
     }
@@ -63,10 +65,11 @@ public class OrderController {
     public String placeOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) Long addressId,
+            @RequestParam(defaultValue = "COD") PaymentMethod paymentMethod,
             RedirectAttributes ra) {
         try {
             User user = getCurrentUser(userDetails);
-            Order order = checkoutService.checkout(user.getId(), addressId);
+            Order order = checkoutService.checkout(user.getId(), addressId, paymentMethod);
             ra.addFlashAttribute("successMessage",
                     "Order #" + order.getId() + " placed successfully!");
             return "redirect:/buyer/orders";

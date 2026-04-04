@@ -61,6 +61,40 @@
                             </div>
                         </div>
 
+                        <!-- Payment Method Selection (Strategy Pattern) -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header fw-bold"><i class="bi bi-wallet2 me-2"></i>Payment Method</div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod"
+                                           id="payCOD" value="COD" checked>
+                                    <label class="form-check-label" for="payCOD">
+                                        <i class="bi bi-cash-stack text-success me-1"></i>
+                                        <strong>Cash on Delivery</strong>
+                                        <small class="text-muted d-block">Pay when you receive your order</small>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod"
+                                           id="payBKASH" value="BKASH">
+                                    <label class="form-check-label" for="payBKASH">
+                                        <i class="bi bi-phone text-danger me-1"></i>
+                                        <strong>bKash</strong>
+                                        <small class="text-muted d-block">Pay via bKash mobile wallet</small>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod"
+                                           id="payNAGAD" value="NAGAD">
+                                    <label class="form-check-label" for="payNAGAD">
+                                        <i class="bi bi-phone-fill text-warning me-1"></i>
+                                        <strong>Nagad</strong>
+                                        <small class="text-muted d-block">Pay via Nagad mobile wallet</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Order Items Summary -->
                         <div class="card shadow-sm mb-4">
                             <div class="card-header fw-bold"><i class="bi bi-bag-check me-2"></i>Order Items</div>
