@@ -14,14 +14,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Exception handling tests -- verifies GlobalExceptionHandler behaviour
  * for both web and API requests.
  *
- * Uses a dummy controller that throws each exception type. For web requests
- * the handler returns a view name with HTTP 200 (default). For API requests
- * (URI starts with /api/) the handler returns proper HTTP status codes.
+ * Uses a dummy controller that throws each exception type.
+ * Web requests return proper HTTP status codes + a view name.
+ * API requests (URI starts with /api/) return proper HTTP status codes + JSON.
  *
  * Tests cover:
  * - NotFoundException returns 404 view (web) / 404 JSON (API)
  * - AccessDeniedException returns 403 view (web) / 403 JSON (API)
- * - InsufficientStockException returns stock view (web) / 409 JSON (API)
+ * - InsufficientStockException returns 409 stock view (web) / 409 JSON (API)
  * - ValidationException returns 400 view (web) / 400 JSON (API)
  * - Generic Exception returns 500 view (web) / 500 JSON (API)
  */
@@ -77,7 +77,7 @@ public class ExceptionHandlingTest {
     @Test
     void notFound_Web_Returns404View() throws Exception {
         mockMvc.perform(get("/throw/not-found"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(view().name("error/404"))
                 .andExpect(model().attribute("errorCode", 404));
     }
@@ -94,7 +94,7 @@ public class ExceptionHandlingTest {
     @Test
     void accessDenied_Web_Returns403View() throws Exception {
         mockMvc.perform(get("/throw/access-denied"))
-                .andExpect(status().isOk())
+                .andExpect(status().isForbidden())
                 .andExpect(view().name("error/403"))
                 .andExpect(model().attribute("errorCode", 403));
     }
@@ -111,7 +111,7 @@ public class ExceptionHandlingTest {
     @Test
     void insufficientStock_Web_ReturnsStockView() throws Exception {
         mockMvc.perform(get("/throw/stock"))
-                .andExpect(status().isOk())
+                .andExpect(status().isConflict())
                 .andExpect(view().name("error/stock"))
                 .andExpect(model().attributeExists("errorMessage"));
     }
@@ -128,7 +128,7 @@ public class ExceptionHandlingTest {
     @Test
     void validation_Web_Returns400View() throws Exception {
         mockMvc.perform(get("/throw/validation"))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andExpect(view().name("error/400"))
                 .andExpect(model().attribute("errorCode", 400));
     }
@@ -145,7 +145,7 @@ public class ExceptionHandlingTest {
     @Test
     void generic_Web_Returns500View() throws Exception {
         mockMvc.perform(get("/throw/generic"))
-                .andExpect(status().isOk())
+                .andExpect(status().isInternalServerError())
                 .andExpect(view().name("error/500"))
                 .andExpect(model().attribute("errorCode", 500));
     }

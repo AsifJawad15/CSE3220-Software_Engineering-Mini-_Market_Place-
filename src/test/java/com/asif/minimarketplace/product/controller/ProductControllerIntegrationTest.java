@@ -86,7 +86,7 @@ class ProductControllerIntegrationTest {
     @Test
     void productDetail_invalidId_returnsErrorPage() throws Exception {
         mockMvc.perform(get("/products/99999"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(view().name("error/404"))
                 .andExpect(model().attribute("errorCode", 404));
     }
