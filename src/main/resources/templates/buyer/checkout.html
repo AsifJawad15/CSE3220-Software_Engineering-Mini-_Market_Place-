@@ -24,6 +24,14 @@
         <!-- Main Content -->
         <div class="col-md-10 py-4 px-4">
             <h4 class="fw-bold mb-4"><i class="bi bi-credit-card me-2 text-primary"></i>Checkout</h4>
+            <!-- Currency Switcher -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-currency-exchange text-muted"></i>
+                <span class="text-muted small">Show prices in:</span>
+                <button class="btn btn-sm btn-warning currency-toggle-btn fw-bold" data-currency="BDT" onclick="setCurrency('BDT')">৳ BDT</button>
+                <button class="btn btn-sm btn-outline-secondary currency-toggle-btn" data-currency="USD" onclick="setCurrency('USD')">$ USD</button>
+                <small id="exchange-rate-badge" class="text-muted ms-2" style="display:none"></small>
+            </div>
 
             <!-- Alerts -->
             <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible">
@@ -111,7 +119,9 @@
                                     <tr th:each="item : ${cart.items}">
                                         <td th:text="${item.product.name}"></td>
                                         <td class="text-center" th:text="${item.quantity}"></td>
-                                        <td class="text-end" th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></td>
+                                     <td class="text-end"
+                                         th:attr="data-bdt=${item.unitPriceSnapshot}"
+                                         th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -132,7 +142,8 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
                                 <span th:text="'Items (' + ${#lists.size(cart.items)} + ')'"></span>
-                                <strong th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                <strong th:attr="data-bdt=${cartTotal}"
+                                        th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Shipping</span>
@@ -141,7 +152,9 @@
                             <hr>
                             <div class="d-flex justify-content-between">
                                 <strong class="fs-5">Total</strong>
-                                <strong class="fs-5 text-primary" th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                <strong class="fs-5 text-primary"
+                                        th:attr="data-bdt=${cartTotal}"
+                                        th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
                             </div>
                         </div>
                     </div>
@@ -151,6 +164,7 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/currency.js"></script>
 </body>
 </html>
 

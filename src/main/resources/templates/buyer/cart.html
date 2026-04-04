@@ -23,7 +23,15 @@
 
         <!-- Main Content -->
         <div class="col-md-10 py-4 px-4">
-            <h4 class="fw-bold mb-4"><i class="bi bi-cart3 me-2 text-primary"></i>My Cart</h4>
+        <h4 class="fw-bold mb-4"><i class="bi bi-cart3 me-2 text-primary"></i>My Cart</h4>
+            <!-- Currency Switcher -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-currency-exchange text-muted"></i>
+                <span class="text-muted small">Show prices in:</span>
+                <button class="btn btn-sm btn-warning currency-toggle-btn fw-bold" data-currency="BDT" onclick="setCurrency('BDT')">৳ BDT</button>
+                <button class="btn btn-sm btn-outline-secondary currency-toggle-btn" data-currency="USD" onclick="setCurrency('USD')">$ USD</button>
+                <small id="exchange-rate-badge" class="text-muted ms-2" style="display:none"></small>
+            </div>
 
             <!-- Alerts -->
             <div th:if="${successMessage}" class="alert alert-success alert-dismissible">
@@ -66,7 +74,8 @@
                                     <div class="small text-muted" th:text="${item.product.category != null ? item.product.category.name : 'N/A'}"></div>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></span>
+                                    <span th:attr="data-bdt=${item.unitPriceSnapshot}"
+                                          th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot,1,2)}"></span>
                                 </td>
                                 <td class="align-middle text-center">
                                     <form th:action="@{/buyer/cart/update/{id}(id=${item.id})}" method="post" class="d-flex align-items-center justify-content-center gap-1">
@@ -79,7 +88,8 @@
                                     </form>
                                 </td>
                                 <td class="align-middle text-center fw-semibold">
-                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}"></span>
+                                    <span th:attr="data-bdt=${item.subtotal}"
+                                          th:text="'৳' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}"></span>
                                 </td>
                                 <td class="align-middle text-center">
                                     <form th:action="@{/buyer/cart/remove/{id}(id=${item.id})}" method="post">
@@ -104,7 +114,8 @@
                                 <hr>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Subtotal</span>
-                                    <strong th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                    <strong th:attr="data-bdt=${cartTotal}"
+                                            th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span>Shipping</span>
@@ -113,7 +124,9 @@
                                 <hr>
                                 <div class="d-flex justify-content-between mb-3">
                                     <strong>Total</strong>
-                                    <strong class="text-primary fs-5" th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
+                                    <strong class="text-primary fs-5"
+                                            th:attr="data-bdt=${cartTotal}"
+                                            th:text="'৳' + ${#numbers.formatDecimal(cartTotal,1,2)}"></strong>
                                 </div>
                                 <a th:href="@{/buyer/checkout}" class="btn btn-primary w-100">
                                     <i class="bi bi-credit-card me-2"></i>Proceed to Checkout
@@ -130,5 +143,6 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/currency.js"></script>
 </body>
 </html>
