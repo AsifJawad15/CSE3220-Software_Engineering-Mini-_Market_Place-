@@ -64,7 +64,7 @@
                             <td class="align-middle text-end"
                                 th:text="'৳' + ${#numbers.formatDecimal(item.priceAtPurchase,1,2)}"></td>
                             <td class="align-middle text-end fw-semibold"
-                                th:text="'৳' + ${#numbers.formatDecimal(item.priceAtPurchase * item.quantity, 1, 2)}"></td>
+                                th:text="'৳' + ${#numbers.formatDecimal(item.priceAtPurchase.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}"></td>
                             <td class="align-middle text-center">
                                 <span th:switch="${item.order.status.name()}">
                                     <span th:case="'PENDING'" class="badge bg-warning text-dark">Pending</span>

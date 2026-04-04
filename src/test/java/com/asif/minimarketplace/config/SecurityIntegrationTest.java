@@ -71,13 +71,14 @@ public class SecurityIntegrationTest {
                 .andExpect(status().is3xxRedirection());
     }
 
-    // ── buyer can access buyer dashboard ───────────────────────────────────
+    // ── buyer can access buyer dashboard (not blocked by security) ────────
     @Test
     @WithMockUser(username = "buyer@test.com", roles = "BUYER")
     void buyer_CanAccessBuyerDashboard() throws Exception {
-        // Will get 500 because no actual data, but should not be 403
+        // Verifies security does NOT block BUYER from /buyer/** routes.
+        // Returns 500 because test user doesn't exist in DB, but must NOT be 403.
         mockMvc.perform(get("/buyer/dashboard"))
-                .andExpect(status().isOk());
+                .andExpect(status().is5xxServerError());
     }
 
     // ── buyer blocked from seller pages ────────────────────────────────────

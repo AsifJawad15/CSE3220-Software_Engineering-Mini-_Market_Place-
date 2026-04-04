@@ -79,7 +79,7 @@
                                     </form>
                                 </td>
                                 <td class="align-middle text-center fw-semibold">
-                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot * item.quantity, 1, 2)}"></span>
+                                    <span th:text="'৳' + ${#numbers.formatDecimal(item.unitPriceSnapshot.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)}"></span>
                                 </td>
                                 <td class="align-middle text-center">
                                     <form th:action="@{/buyer/cart/remove/{id}(id=${item.id})}" method="post">

@@ -21,6 +21,7 @@ public class GlobalExceptionHandler {
         return uri.startsWith("/api/");
     }
     @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Object handleNotFound(NotFoundException ex, HttpServletRequest request, Model model) {
         log.warn("Not found: {}", ex.getMessage());
         if (isApiRequest(request)) {
@@ -32,6 +33,7 @@ public class GlobalExceptionHandler {
         return "error/404";
     }
     @ExceptionHandler(com.asif.minimarketplace.common.exception.AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     public Object handleCustomAccessDenied(
             com.asif.minimarketplace.common.exception.AccessDeniedException ex,
             HttpServletRequest request, Model model) {
@@ -45,6 +47,7 @@ public class GlobalExceptionHandler {
         return "error/403";
     }
     @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     public Object handleSpringAccessDenied(AccessDeniedException ex, HttpServletRequest request, Model model) {
         log.warn("Spring Security access denied: {}", ex.getMessage());
         if (isApiRequest(request)) {
@@ -56,6 +59,7 @@ public class GlobalExceptionHandler {
         return "error/403";
     }
     @ExceptionHandler(InsufficientStockException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public Object handleInsufficientStock(InsufficientStockException ex, HttpServletRequest request, Model model) {
         log.warn("Insufficient stock: {}", ex.getMessage());
         if (isApiRequest(request)) {
@@ -66,6 +70,7 @@ public class GlobalExceptionHandler {
         return "error/stock";
     }
     @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleValidation(ValidationException ex, HttpServletRequest request, Model model) {
         log.warn("Validation error: {}", ex.getMessage());
         if (isApiRequest(request)) {
@@ -77,6 +82,7 @@ public class GlobalExceptionHandler {
         return "error/400";
     }
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleBindValidation(Exception ex, HttpServletRequest request, Model model) {
         String errors;
         if (ex instanceof MethodArgumentNotValidException manve) {
@@ -96,6 +102,7 @@ public class GlobalExceptionHandler {
         return "error/400";
     }
     @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Object handleNoResource(NoResourceFoundException ex, HttpServletRequest request, Model model) {
         log.warn("No resource found: {}", request.getRequestURI());
         if (isApiRequest(request)) {
@@ -108,6 +115,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Object handleIllegalState(IllegalStateException ex, HttpServletRequest request, Model model) {
         log.warn("Illegal state: {}", ex.getMessage());
         if (isApiRequest(request)) {
@@ -120,6 +128,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Object handleGeneric(Exception ex, HttpServletRequest request, Model model) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         if (isApiRequest(request)) {

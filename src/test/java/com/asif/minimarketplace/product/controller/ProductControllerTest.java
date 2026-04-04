@@ -109,7 +109,7 @@ class ProductControllerTest {
         when(productService.findById(999L)).thenThrow(new NotFoundException("Product", 999L));
 
         mockMvc.perform(get("/products/999"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(view().name("error/404"))
                 .andExpect(model().attributeExists("errorMessage"));
     }
@@ -120,7 +120,7 @@ class ProductControllerTest {
         when(productService.findById(2L)).thenThrow(new NotFoundException("Product", 2L));
 
         mockMvc.perform(get("/products/2"))
-                .andExpect(status().isOk())
+                .andExpect(status().isNotFound())
                 .andExpect(view().name("error/404"))
                 .andExpect(model().attributeExists("errorMessage"));
     }

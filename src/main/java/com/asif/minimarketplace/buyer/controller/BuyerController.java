@@ -43,11 +43,27 @@ public class BuyerController {
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = getCurrentUser(userDetails);
-        BuyerProfile profile = buyerProfileService.getProfileByUserId(user.getId());
-        List<Address> addresses = buyerProfileService.getAddresses(user.getId());
         model.addAttribute("user", user);
+
+        // Defensively load profile — never let dashboard crash
+        BuyerProfile profile = null;
+        try {
+            profile = buyerProfileService.getProfileByUserId(user.getId());
+        } catch (Exception e) {
+            log.warn("Could not load buyer profile for user {}: {}", user.getId(), e.getMessage());
+        }
         model.addAttribute("profile", profile);
-        model.addAttribute("addressCount", addresses.size());
+
+        // Address count
+        try {
+            List<Address> addresses = buyerProfileService.getAddresses(user.getId());
+            model.addAttribute("addressCount", addresses.size());
+        } catch (Exception e) {
+            log.warn("Could not load addresses for user {}: {}", user.getId(), e.getMessage());
+            model.addAttribute("addressCount", 0);
+        }
+
+        // Cart item count
         try {
             Cart cart = cartService.getOrCreateCart(user.getId());
             model.addAttribute("cartItemCount", cart.getItems().size());
@@ -55,12 +71,15 @@ public class BuyerController {
             log.warn("Could not load cart for user {}: {}", user.getId(), e.getMessage());
             model.addAttribute("cartItemCount", 0);
         }
+
+        // Order count
         try {
             model.addAttribute("orderCount", orderService.getBuyerOrders(user.getId()).size());
         } catch (Exception e) {
             log.warn("Could not load orders for user {}: {}", user.getId(), e.getMessage());
             model.addAttribute("orderCount", 0);
         }
+
         return "buyer/dashboard";
     }
 
