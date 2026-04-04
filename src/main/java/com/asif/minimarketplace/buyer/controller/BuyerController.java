@@ -45,12 +45,22 @@ public class BuyerController {
         User user = getCurrentUser(userDetails);
         BuyerProfile profile = buyerProfileService.getProfileByUserId(user.getId());
         List<Address> addresses = buyerProfileService.getAddresses(user.getId());
-        Cart cart = cartService.getOrCreateCart(user.getId());
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
         model.addAttribute("addressCount", addresses.size());
-        model.addAttribute("cartItemCount", cart.getItems().size());
-        model.addAttribute("orderCount", orderService.getBuyerOrders(user.getId()).size());
+        try {
+            Cart cart = cartService.getOrCreateCart(user.getId());
+            model.addAttribute("cartItemCount", cart.getItems().size());
+        } catch (Exception e) {
+            log.warn("Could not load cart for user {}: {}", user.getId(), e.getMessage());
+            model.addAttribute("cartItemCount", 0);
+        }
+        try {
+            model.addAttribute("orderCount", orderService.getBuyerOrders(user.getId()).size());
+        } catch (Exception e) {
+            log.warn("Could not load orders for user {}: {}", user.getId(), e.getMessage());
+            model.addAttribute("orderCount", 0);
+        }
         return "buyer/dashboard";
     }
 
