@@ -29,7 +29,7 @@ public class Order extends BaseEntity {
     private OrderStatus status = OrderStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false, length = 20)
+    @Column(name = "payment_method", length = 20)
     @Builder.Default
     private PaymentMethod paymentMethod = PaymentMethod.COD;
 
