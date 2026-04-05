@@ -1,359 +1,1036 @@
 # Mini Market Place
 
-A full-stack Spring Boot marketplace application with buyer, seller, and admin roles. Built with Spring MVC, Spring Security, Thymeleaf, and PostgreSQL.
+> A full-stack **role-based marketplace platform** built with **Spring Boot**, **Thymeleaf**, **Spring Security**, **PostgreSQL**, **Docker**, and **GitHub Actions**.
+>
+> The system supports three roles — **Admin**, **Seller**, and **Buyer** — and implements a complete commerce flow from product browsing to cart, checkout, payment strategy selection, order tracking, seller moderation, and administrative control.
+
+![Java](https://img.shields.io/badge/Java-17-blue)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6.x-6DB33F)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
+![Thymeleaf](https://img.shields.io/badge/Thymeleaf-MVC-005F0F)
+![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED)
+![CI/CD](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF)
 
 ---
 
-## Testing Summary
+## Table of Contents
 
-The project includes **163 tests** covering unit tests, integration tests, security authorization tests, and exception handling tests. All tests pass with **0 failures**.
+1. [Project Overview](#project-overview)
+2. [Core Features](#core-features)
+3. [Role-Based Access Model](#role-based-access-model)
+4. [Architecture Overview](#architecture-overview)
+5. [Request and Business Flows](#request-and-business-flows)
+6. [Database Design](#database-design)
+7. [Security Design](#security-design)
+8. [Design Patterns and Engineering Decisions](#design-patterns-and-engineering-decisions)
+9. [Project Structure](#project-structure)
+10. [Web Endpoints](#web-endpoints)
+11. [REST API Endpoints](#rest-api-endpoints)
+12. [API Response Format](#api-response-format)
+13. [Environment Variables](#environment-variables)
+14. [How to Run the Project](#how-to-run-the-project)
+15. [Docker Setup](#docker-setup)
+16. [Testing](#testing)
+17. [CI/CD Pipeline](#cicd-pipeline)
+18. [Seed Data and Startup Behavior](#seed-data-and-startup-behavior)
+19. [Future Improvements](#future-improvements)
+20. [Authors / Team](#authors--team)
 
+---
+
+## Project Overview
+
+**Mini Market Place** is a server-rendered marketplace web application where:
+
+- **Buyers** can register, manage addresses, browse products, add items to cart, place orders, track order history, and cancel pending orders.
+- **Sellers** can register, manage their shop profile, wait for admin approval, create/update/delete products, and process order fulfillment.
+- **Admins** can review sellers, manage users, moderate products, monitor platform activity, and inspect all orders.
+
+The system combines:
+
+- **Spring MVC + Thymeleaf** for web pages
+- **REST APIs** for JSON-based operations
+- **Spring Security** for authentication and route protection
+- **PostgreSQL + Spring Data JPA** for persistence
+- **Docker** for containerized execution
+- **GitHub Actions** for automated testing, build, image build, and deployment hook triggering
+
+This project is designed to demonstrate not only feature completeness, but also **clean layering**, **DTO usage**, **exception handling**, **role-based authorization**, **payment extensibility**, and **deployment readiness**.
+
+---
+
+## Core Features
+
+### Public Features
+
+- Public product catalog
+- Product search and category filtering
+- Public product detail page
+- Buyer registration
+- Seller registration
+- Form-based login using email and password
+
+### Buyer Features
+
+- Buyer dashboard
+- Buyer profile management
+- Address book management
+- Default address selection
+- Shopping cart
+- Checkout with payment method selection
+- Order history and order detail view
+- Cancel pending order
+
+### Seller Features
+
+- Seller dashboard
+- Seller profile management
+- Seller approval workflow
+- Product CRUD (create, edit, delete)
+- Product tagging and categorization
+- Seller-side order processing
+- Order status advancement
+
+### Admin Features
+
+- Admin dashboard statistics
+- User listing
+- Seller approval and rejection
+- Product moderation (activate/deactivate)
+- Full order visibility
+- Admin JSON APIs for stats, users, sellers, products, and orders
+
+### Engineering Features
+
+- BCrypt password hashing
+- DTO-based REST responses
+- Global exception handling for both HTML and API requests
+- Role-based redirection after login
+- Payment processing abstraction with extensible strategy factory
+- Dockerized application and database
+- CI/CD pipeline through GitHub Actions
+
+---
+
+## Role-Based Access Model
+
+| Role | Main Responsibilities |
+|---|---|
+| **ADMIN** | Review seller applications, monitor users, moderate products, inspect all orders, access dashboard statistics |
+| **SELLER** | Manage seller profile, create/update/delete products, view seller orders, advance order status |
+| **BUYER** | Manage profile and addresses, browse products, manage cart, checkout, review/cancel orders |
+
+### Role Rules
+
+- A new **buyer** account is immediately usable after registration.
+- A new **seller** account is created with **`PENDING`** approval status.
+- A seller must be **approved by admin** before accessing product creation flow.
+- Only **buyers** can access cart and checkout endpoints.
+- Only **admins** can access administrative routes and moderation endpoints.
+
+---
+
+## Architecture Overview
+
+The project follows a **layered architecture** with a clear separation between presentation, business logic, and persistence.
+
+```mermaid
+flowchart LR
+    A[Browser / Client] --> B[Thymeleaf Views + REST Controllers]
+    B --> C[Service Layer]
+    C --> D[Repositories]
+    D --> E[(PostgreSQL)]
+
+    C --> F[Payment Strategy Factory]
+    F --> G[COD Strategy]
+    F --> H[bKash Strategy]
+    F --> I[Nagad Strategy]
+
+    H --> J[Bkash Payment Adapter]
+    I --> K[Nagad Payment Adapter]
+
+    J --> L[Simulated bKash Gateway Client]
+    K --> M[Simulated Nagad Gateway Client]
 ```
-Tests run: 163, Failures: 0, Errors: 0, Skipped: 0 — BUILD SUCCESS
+
+### Layer Responsibilities
+
+| Layer | Main Components | Responsibility |
+|---|---|---|
+| **Presentation Layer** | Controllers, Thymeleaf templates | Handles HTTP requests, renders views, returns JSON |
+| **Service Layer** | Auth, Buyer, Seller, Product, Cart, Checkout, Order services | Implements business rules and workflows |
+| **Persistence Layer** | JPA entities and repositories | Stores and retrieves application data |
+| **Cross-Cutting Layer** | Security config, DTO mapper, exception handler, data initializer | Handles authentication, data mapping, startup seeding, error responses |
+| **Integration Layer** | Payment strategies, adapters, gateway clients | Encapsulates payment processing behavior |
+
+---
+
+## Request and Business Flows
+
+### 1. Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as AuthController
+    participant S as AuthService
+    participant R as UserRepository
+    participant P as ProfileService
+
+    U->>C: Submit registration form
+    C->>S: registerBuyer / registerSeller
+    S->>R: Check duplicate email
+    S->>S: Validate password confirmation
+    S->>S: Encode password with BCrypt
+    S->>R: Save User
+    S->>P: Create BuyerProfile / SellerProfile
+    C-->>U: Redirect to login page
 ```
 
-### How to Run Tests
+### 2. Product Browsing Flow
+
+```mermaid
+flowchart LR
+    A[GET /products] --> B{Search or filter?}
+    B -->|q parameter| C[Search active products]
+    B -->|categoryId parameter| D[Filter active products by category]
+    B -->|none| E[List latest active products]
+    C --> F[Return paginated product list]
+    D --> F
+    E --> F
+```
+
+### 3. Checkout Flow
+
+```mermaid
+sequenceDiagram
+    participant B as Buyer
+    participant CS as CartService
+    participant CH as CheckoutService
+    participant INV as InventoryService
+    participant PF as PaymentStrategyFactory
+    participant OR as OrderRepository
+
+    B->>CS: Add products to cart
+    B->>CH: Checkout
+    CH->>INV: Validate stock for all items
+    CH->>PF: Resolve strategy by payment method
+    PF-->>CH: COD / BKASH / NAGAD strategy
+    CH->>CH: Process payment
+    CH->>OR: Save Order and OrderItems
+    CH->>INV: Deduct stock
+    CH->>CS: Clear cart
+```
+
+### 4. Order Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> CONFIRMED
+    CONFIRMED --> PACKED
+    PACKED --> SHIPPED
+    SHIPPED --> DELIVERED
+    PENDING --> CANCELLED
+```
+
+### 5. Seller Approval Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> APPROVED
+    PENDING --> REJECTED
+```
+
+---
+
+## Database Design
+
+All entities inherit from `BaseEntity`, which provides:
+
+- `id`
+- `createdAt`
+- `updatedAt`
+
+### Main Entities
+
+- `User`
+- `BuyerProfile`
+- `SellerProfile`
+- `Address`
+- `Category`
+- `Tag`
+- `Product`
+- `Cart`
+- `CartItem`
+- `Order`
+- `OrderItem`
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USER ||--o| BUYER_PROFILE : has
+    USER ||--o| SELLER_PROFILE : has
+    BUYER_PROFILE ||--o{ ADDRESS : owns
+    BUYER_PROFILE ||--|| CART : owns
+    BUYER_PROFILE ||--o{ ORDER : places
+    SELLER_PROFILE ||--o{ PRODUCT : lists
+    CATEGORY ||--o{ PRODUCT : classifies
+    PRODUCT }o--o{ TAG : tagged_with
+    CART ||--o{ CART_ITEM : contains
+    PRODUCT ||--o{ CART_ITEM : referenced_by
+    ORDER ||--o{ ORDER_ITEM : contains
+    PRODUCT ||--o{ ORDER_ITEM : purchased_as
+    SELLER_PROFILE ||--o{ ORDER_ITEM : fulfills
+
+    USER {
+        bigint id PK
+        string full_name
+        string email UK
+        string password
+        enum role
+        boolean enabled
+        datetime created_at
+        datetime updated_at
+    }
+
+    BUYER_PROFILE {
+        bigint id PK
+        bigint user_id FK
+        string phone
+        bigint default_address_id
+    }
+
+    SELLER_PROFILE {
+        bigint id PK
+        bigint user_id FK
+        string shop_name
+        string phone
+        enum approval_status
+    }
+
+    ADDRESS {
+        bigint id PK
+        bigint buyer_profile_id FK
+        string label
+        string line1
+        string city
+        string postal
+        string country
+        string phone
+        boolean is_default
+    }
+
+    CATEGORY {
+        bigint id PK
+        string name UK
+        string slug UK
+    }
+
+    TAG {
+        bigint id PK
+        string name UK
+        string slug UK
+    }
+
+    PRODUCT {
+        bigint id PK
+        string name
+        text description
+        decimal price
+        int stock_quantity
+        string image_url
+        boolean active
+        bigint category_id FK
+        bigint seller_id FK
+    }
+
+    CART {
+        bigint id PK
+        bigint buyer_profile_id FK
+    }
+
+    CART_ITEM {
+        bigint id PK
+        bigint cart_id FK
+        bigint product_id FK
+        int quantity
+        decimal unit_price_snapshot
+    }
+
+    ORDER {
+        bigint id PK
+        bigint buyer_profile_id FK
+        enum status
+        enum payment_method
+        string transaction_id
+        decimal total_amount
+        text shipping_address
+    }
+
+    ORDER_ITEM {
+        bigint id PK
+        bigint order_id FK
+        bigint product_id FK
+        bigint seller_profile_id FK
+        int quantity
+        decimal price_at_purchase
+    }
+```
+
+### Important Relationship Notes
+
+- A `User` stores authentication and role data.
+- A buyer has a dedicated `BuyerProfile`.
+- A seller has a dedicated `SellerProfile`.
+- A seller owns many `Product` rows.
+- A product belongs to one `Category` and can have many `Tag`s.
+- A buyer has exactly one `Cart`.
+- An `Order` belongs to a buyer and contains multiple `OrderItem`s.
+- Each `OrderItem` references the seller responsible for fulfilling that product.
+
+---
+
+## Security Design
+
+The application uses **Spring Security** with form login and role-based route protection.
+
+### Security Features
+
+- Custom login page: `/login`
+- Email-based authentication (`usernameParameter("email")`)
+- Password hashing with `BCryptPasswordEncoder`
+- Session-based authentication
+- Role-based authorization per route group
+- Role-based redirect after successful login
+- Custom access denied page: `/error/403`
+- H2 console allowed only for local development support
+
+### Route Protection Summary
+
+| Route Pattern | Access |
+|---|---|
+| `/`, `/products/**`, `/api/products/**`, `/api/categories/**` | Public |
+| `/register/**`, `/login`, `/css/**`, `/js/**`, `/images/**` | Public |
+| `/buyer/**`, `/api/buyer/**`, `/api/cart/**`, `/api/orders/**` | BUYER |
+| `/seller/**`, `/api/seller/**` | SELLER |
+| `/admin/**`, `/api/admin/**` | ADMIN |
+
+### Login Redirects
+
+| Role | Redirect Target |
+|---|---|
+| ADMIN | `/admin/dashboard` |
+| SELLER | `/seller/dashboard` |
+| BUYER | `/buyer/dashboard` |
+
+---
+
+## Design Patterns and Engineering Decisions
+
+### 1. Layered Architecture
+The codebase separates controllers, services, repositories, entities, DTOs, and configuration classes to keep responsibilities clean.
+
+### 2. Strategy Pattern
+Payment processing is implemented using the `PaymentStrategy` interface with concrete strategies:
+
+- `CodPaymentStrategy`
+- `BkashPaymentStrategy`
+- `NagadPaymentStrategy`
+
+This keeps checkout extensible and avoids large conditional blocks.
+
+### 3. Factory Pattern
+`PaymentStrategyFactory` auto-discovers and returns the correct payment strategy based on `PaymentMethod`.
+
+### 4. Adapter Pattern
+Gateway clients for bKash and Nagad expose different interfaces. Adapters normalize them into a shared `PaymentGatewayPort` contract.
+
+- `BkashPaymentAdapter`
+- `NagadPaymentAdapter`
+
+### 5. DTO Mapping
+REST responses use DTOs instead of directly exposing entities. Mapping is centralized through `DtoMapper`.
+
+### 6. Global Exception Handling
+`GlobalExceptionHandler` produces:
+
+- HTML error pages for MVC requests
+- structured JSON responses for API requests
+
+### 7. Audit Base Entity
+`BaseEntity` standardizes timestamps and primary key behavior across all entities.
+
+### 8. Startup Seeding + Migration
+Startup runners seed admin/category/tag data and perform a lightweight data-fix migration for existing orders with null payment methods.
+
+---
+
+## Project Structure
+
+```text
+src/main/java/com/asif/minimarketplace
+├── admin
+│   └── controller
+├── auth
+│   ├── controller
+│   ├── dto
+│   └── service
+├── buyer
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── repository
+│   └── service
+├── cart
+│   ├── controller
+│   ├── entity
+│   ├── repository
+│   └── service
+├── common
+│   ├── dto
+│   ├── entity
+│   └── exception
+├── config
+├── order
+│   ├── controller
+│   ├── entity
+│   ├── repository
+│   └── service
+├── payment
+│   ├── adapter
+│   ├── gateway
+│   └── strategy
+├── product
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── repository
+│   └── service
+├── security
+├── seller
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── repository
+│   └── service
+└── user
+    ├── entity
+    └── repository
+```
+
+### Resource Structure
+
+```text
+src/main/resources
+├── application.yaml
+├── application-local.yaml
+├── static
+│   └── js/currency.js
+└── templates
+    ├── admin
+    ├── auth
+    ├── buyer
+    ├── error
+    ├── fragments
+    ├── products
+    └── seller
+```
+
+---
+
+## Web Endpoints
+
+These endpoints render **Thymeleaf pages** and support the browser-based user interface.
+
+### Public Web Routes
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/` | Redirect to product listing | Public |
+| GET | `/login` | Login page | Public |
+| GET | `/register/buyer` | Buyer registration form | Public |
+| POST | `/register/buyer` | Register buyer account | Public |
+| GET | `/register/seller` | Seller registration form | Public |
+| POST | `/register/seller` | Register seller account | Public |
+| GET | `/products` | Public product list with pagination/filter/search | Public |
+| GET | `/products/{id}` | Public product detail page | Public |
+
+### Buyer Web Routes
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/buyer/dashboard` | Buyer dashboard | BUYER |
+| GET | `/buyer/profile` | Buyer profile page | BUYER |
+| POST | `/buyer/profile` | Update buyer profile | BUYER |
+| GET | `/buyer/addresses` | Buyer addresses page | BUYER |
+| POST | `/buyer/addresses` | Add new address | BUYER |
+| POST | `/buyer/addresses/{id}/default` | Set default address | BUYER |
+| POST | `/buyer/addresses/{id}/delete` | Delete address | BUYER |
+| GET | `/buyer/cart` | View cart | BUYER |
+| POST | `/buyer/cart/add` | Add item to cart | BUYER |
+| POST | `/buyer/cart/update/{itemId}` | Update cart item quantity | BUYER |
+| POST | `/buyer/cart/remove/{itemId}` | Remove cart item | BUYER |
+| GET | `/buyer/checkout` | Checkout page | BUYER |
+| POST | `/buyer/checkout` | Place order | BUYER |
+| GET | `/buyer/orders` | Buyer order history | BUYER |
+| GET | `/buyer/orders/{id}` | Buyer order detail page | BUYER |
+| POST | `/buyer/orders/{id}/cancel` | Cancel pending order | BUYER |
+
+### Seller Web Routes
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/seller/dashboard` | Seller dashboard | SELLER |
+| GET | `/seller/profile` | Seller profile page | SELLER |
+| POST | `/seller/profile` | Update seller profile | SELLER |
+| GET | `/seller/products` | Seller product list | SELLER |
+| GET | `/seller/products/new` | Product create form | SELLER |
+| POST | `/seller/products/new` | Create product | SELLER |
+| GET | `/seller/products/{id}/edit` | Product edit form | SELLER |
+| POST | `/seller/products/{id}/edit` | Update product | SELLER |
+| POST | `/seller/products/{id}/delete` | Delete product | SELLER |
+| GET | `/seller/orders` | Seller order items page | SELLER |
+| POST | `/seller/orders/{orderId}/advance` | Advance order status | SELLER |
+
+### Admin Web Routes
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/admin/dashboard` | Admin dashboard with platform stats | ADMIN |
+| GET | `/admin/sellers` | Seller management page | ADMIN |
+| POST | `/admin/sellers/{id}/approve` | Approve seller | ADMIN |
+| POST | `/admin/sellers/{id}/reject` | Reject seller | ADMIN |
+| GET | `/admin/users` | User list page | ADMIN |
+| GET | `/admin/products` | Product moderation page | ADMIN |
+| POST | `/admin/products/{id}/toggle` | Toggle product active/inactive | ADMIN |
+| GET | `/admin/orders` | All orders page | ADMIN |
+
+---
+
+## REST API Endpoints
+
+All API endpoints return JSON using the shared `ApiResponse<T>` wrapper.
+
+### Public REST APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/categories` | List all categories | Public |
+| GET | `/api/categories/{id}` | Get category detail | Public |
+| GET | `/api/products` | List active products with pagination/filter/search | Public |
+| GET | `/api/products/{id}` | Get product detail | Public |
+
+#### Supported Query Parameters for `GET /api/products`
+
+| Query Param | Type | Description |
+|---|---|---|
+| `page` | int | Page number, default `0` |
+| `size` | int | Page size, default `12` |
+| `q` | string | Search keyword |
+| `categoryId` | long | Filter by category |
+
+### Buyer REST APIs
+
+#### Cart APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/buyer/cart` | Get current buyer cart | BUYER |
+| POST | `/api/buyer/cart/items` | Add item to cart | BUYER |
+| PATCH | `/api/buyer/cart/items/{itemId}` | Update item quantity | BUYER |
+| DELETE | `/api/buyer/cart/items/{itemId}` | Remove cart item | BUYER |
+| DELETE | `/api/buyer/cart` | Clear full cart | BUYER |
+
+#### Cart API Parameters
+
+| Endpoint | Parameters |
+|---|---|
+| `POST /api/buyer/cart/items` | `productId`, `quantity` |
+| `PATCH /api/buyer/cart/items/{itemId}` | `quantity` |
+
+#### Order APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/api/buyer/orders/checkout` | Checkout current cart and create order | BUYER |
+| GET | `/api/buyer/orders` | Get buyer order list | BUYER |
+| GET | `/api/buyer/orders/{id}` | Get buyer order detail | BUYER |
+| DELETE | `/api/buyer/orders/{id}` | Cancel pending order | BUYER |
+
+#### Checkout Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `addressId` | long | No | Optional shipping address to use |
+| `paymentMethod` | enum | No | `COD`, `BKASH`, or `NAGAD`; default is `COD` |
+
+### Seller REST APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/seller/orders` | Get seller-related order items | SELLER |
+| PATCH | `/api/seller/orders/{orderId}/advance` | Advance order lifecycle step | SELLER |
+
+### Admin REST APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/api/admin/stats` | Dashboard statistics | ADMIN |
+| GET | `/api/admin/users` | List all users | ADMIN |
+| GET | `/api/admin/users/{id}` | Get user by ID | ADMIN |
+| GET | `/api/admin/sellers` | List all seller profiles | ADMIN |
+| GET | `/api/admin/sellers/pending` | List pending sellers | ADMIN |
+| PATCH | `/api/admin/sellers/{id}/approve` | Approve seller | ADMIN |
+| PATCH | `/api/admin/sellers/{id}/reject` | Reject seller | ADMIN |
+| GET | `/api/admin/products` | List all products | ADMIN |
+| PATCH | `/api/admin/products/{id}/toggle` | Toggle product status | ADMIN |
+| GET | `/api/admin/orders` | List all orders | ADMIN |
+
+---
+
+## API Response Format
+
+Most JSON endpoints use a standardized wrapper:
+
+```json
+{
+  "success": true,
+  "message": "Optional message",
+  "data": {},
+  "timestamp": "2026-04-05T12:34:56"
+}
+```
+
+### Example: Successful Product Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Wireless Headphone",
+    "description": "Bluetooth over-ear headphone",
+    "price": 2999.00,
+    "stockQuantity": 12,
+    "imageUrl": "https://example.com/image.jpg",
+    "active": true,
+    "categoryId": 2,
+    "categoryName": "Electronics",
+    "sellerId": 5,
+    "sellerShopName": "Tech Corner",
+    "tags": [
+      { "id": 3, "name": "Best Seller", "slug": "best-seller" }
+    ]
+  },
+  "timestamp": "2026-04-05T12:34:56"
+}
+```
+
+### Example: Error Response
+
+```json
+{
+  "success": false,
+  "message": "You do not own this order",
+  "timestamp": "2026-04-05T12:34:56"
+}
+```
+
+---
+
+## Environment Variables
+
+The application reads database and server values from environment variables.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/minimarketplace` | PostgreSQL JDBC URL |
+| `DB_USER` | `miniuser` | Database username |
+| `DB_PASS` | `minipass` | Database password |
+| `PORT` | `8080` | Application port |
+
+### Example
+
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/minimarketplace
+export DB_USER=miniuser
+export DB_PASS=minipass
+export PORT=8080
+```
+
+---
+
+## How to Run the Project
+
+### Prerequisites
+
+- Java 17
+- Maven Wrapper (`./mvnw` is included)
+- PostgreSQL 16 or compatible version
+- Docker and Docker Compose (optional, recommended)
+
+### Option 1 — Run with PostgreSQL locally
+
+#### 1. Clone the repository
+
+```bash
+git clone https://github.com/AsifJawad15/CSE3220-Software_Engineering-Mini-_Market_Place-.git
+cd CSE3220-Software_Engineering-Mini-_Market_Place-
+```
+
+#### 2. Create the database
+
+```sql
+CREATE DATABASE minimarketplace;
+```
+
+#### 3. Set environment variables
+
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/minimarketplace
+export DB_USER=miniuser
+export DB_PASS=minipass
+export PORT=8080
+```
+
+#### 4. Run the application
+
+```bash
+./mvnw spring-boot:run
+```
+
+#### 5. Open in browser
+
+```text
+http://localhost:8080
+```
+
+### Option 2 — Run with local H2 profile
+
+This is useful for quick local development or isolated testing.
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+H2 console (with local profile):
+
+```text
+http://localhost:8080/h2-console
+```
+
+---
+
+## Docker Setup
+
+The project includes both a **multi-stage Dockerfile** and a **docker-compose.yml**.
+
+### Run everything with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+### Services started
+
+| Service | Port | Description |
+|---|---|---|
+| `postgres` | `5432` | PostgreSQL database |
+| `app` | `8080` | Spring Boot application |
+
+### Stop containers
+
+```bash
+docker compose down
+```
+
+### Remove containers + volumes
+
+```bash
+docker compose down -v
+```
+
+### Docker Notes
+
+- The Dockerfile builds the application JAR in a separate build stage.
+- The runtime image only contains the packaged JAR.
+- `docker-compose.yml` wires the Spring app to the PostgreSQL container through environment variables.
+
+---
+
+## Testing
+
+The project includes a broad automated test suite covering:
+
+- controller tests
+- service tests
+- security tests
+- exception handling tests
+- integration tests for key web flows
+
+### Run all tests
 
 ```bash
 ./mvnw test
 ```
 
----
+### Typical areas covered
 
-## Test Breakdown by Module
+- Buyer and seller registration rules
+- Password validation and duplicate email rejection
+- Buyer profile and address logic
+- Product listing and detail endpoints
+- Cart add/update/remove/clear operations
+- Checkout and order lifecycle behavior
+- Seller product management rules
+- Admin seller moderation and dashboard operations
+- Security authorization rules
+- Global exception handling
 
-### 1. Auth Controller Tests — `AuthControllerTest` (9 tests)
+### Build the project
 
-Integration tests for login and registration endpoints using MockMvc standalone setup.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `loginPage_Loads` | GET `/login` returns 200 and renders login view |
-| 2 | `buyerRegisterPage_Loads` | GET `/register/buyer` returns 200 and renders buyer registration form |
-| 3 | `sellerRegisterPage_Loads` | GET `/register/seller` returns 200 and renders seller registration form |
-| 4 | `validBuyerRegistration_RedirectsToLogin` | POST `/register/buyer` with valid data redirects to `/login` |
-| 5 | `validSellerRegistration_RedirectsToLogin` | POST `/register/seller` with valid data redirects to `/login` |
-| 6 | `duplicateBuyerEmail_ShowsErrorOnForm` | Duplicate email during buyer registration returns form with error |
-| 7 | `duplicateSellerEmail_ShowsErrorOnForm` | Duplicate email during seller registration returns form with error |
-| 8 | `invalidBuyerForm_ReturnsSamePage` | Invalid buyer registration (blank fields) stays on same page |
-| 9 | `invalidSellerForm_ReturnsSamePage` | Invalid seller registration (blank fields) stays on same page |
-
-### 2. Auth Service Tests — `AuthServiceTest` (7 tests)
-
-Unit tests for `AuthService` business logic with Mockito mocks.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `registerBuyer_Success` | Buyer registration creates user with BUYER role and buyer profile |
-| 2 | `registerBuyer_EmailIsNormalized` | Email is converted to lowercase before saving |
-| 3 | `registerBuyer_EmailExists` | Throws exception when email already exists |
-| 4 | `registerBuyer_PasswordsDoNotMatch` | Throws exception when password and confirmPassword don't match |
-| 5 | `registerSeller_Success` | Seller registration creates user with SELLER role and seller profile |
-| 6 | `registerSeller_EmailExists` | Throws exception when email already exists |
-| 7 | `registerSeller_PasswordsDoNotMatch` | Throws exception when passwords don't match |
-
-### 3. Product Controller Tests — `ProductControllerTest` (6 tests)
-
-Integration tests for public product browsing pages.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `listProducts_PublicProductListLoads` | GET `/products` returns 200 and renders product list |
-| 2 | `listProducts_SearchQueryFiltersResults` | GET `/products?q=keyword` passes search query to service |
-| 3 | `listProducts_CategoryFilterWorks` | GET `/products?categoryId=1` filters products by category |
-| 4 | `productDetail_ValidProduct_Loads` | GET `/products/1` loads product detail page |
-| 5 | `productDetail_MissingProduct_ReturnsErrorPage` | GET `/products/999` for nonexistent product returns 404 error page |
-| 6 | `productDetail_InactiveProduct_NotShown` | Inactive product returns 404 error page |
-
-### 4. REST Product Controller Tests — `RestProductControllerTest` (3 tests)
-
-Integration tests for public REST product API endpoints.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `listProducts_Returns200` | GET `/api/products` returns 200 with success JSON |
-| 2 | `getProduct_BadId_Returns404` | GET `/api/products/999` returns 404 JSON for missing product |
-| 3 | `listCategories_Returns200` | GET `/api/categories` returns 200 with success JSON |
-
-### 5. Buyer Controller Tests — `BuyerControllerTest` (9 tests)
-
-Integration tests for buyer dashboard, profile, and address management.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `dashboard_LoadsForBuyer` | GET `/buyer/dashboard` renders buyer dashboard |
-| 2 | `profile_LoadsProfilePage` | GET `/buyer/profile` renders profile page with user data |
-| 3 | `updateProfile_ValidRequest_Redirects` | POST `/buyer/profile` with valid data redirects with success |
-| 4 | `updateProfile_InvalidRequest_StaysOnPage` | Invalid profile update stays on profile page with errors |
-| 5 | `addresses_LoadsPage` | GET `/buyer/addresses` loads addresses page |
-| 6 | `addAddress_ValidRequest_Redirects` | POST `/buyer/addresses` with valid address redirects |
-| 7 | `addAddress_InvalidRequest_StaysOnPage` | Invalid address submission stays on page |
-| 8 | `setDefaultAddress_Works` | POST `/buyer/addresses/1/default` sets default and redirects |
-| 9 | `deleteAddress_Works` | POST `/buyer/addresses/1/delete` deletes and redirects |
-
-### 6. Buyer Profile Service Tests — `BuyerProfileServiceTest` (13 tests)
-
-Unit tests for `BuyerProfileService` business logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `createProfile_Success` | Creating a buyer profile saves correctly |
-| 2 | `getProfileByUserId_Success` | Retrieves profile by user ID |
-| 3 | `getProfileByUserId_NotFound` | Throws NotFoundException for missing profile |
-| 4 | `updateProfile_Success` | Updating profile fields works |
-| 5 | `getAddresses_Success` | Returns list of addresses for a buyer |
-| 6 | `addAddress_FirstAddressBecomesDefault` | First address is automatically set as default |
-| 7 | `addAddress_MakeDefaultClearsOldDefault` | Setting new default clears previous default |
-| 8 | `updateAddress_Success` | Updating an address works |
-| 9 | `updateAddress_AccessDenied` | Cannot update another buyer's address |
-| 10 | `deleteAddress_Success` | Deleting own address works |
-| 11 | `deleteAddress_AccessDenied` | Cannot delete another buyer's address |
-| 12 | `setDefaultAddress_Success` | Setting default address works |
-| 13 | `setDefaultAddress_AccessDenied` | Cannot set default on another buyer's address |
-
-### 7. Cart Controller Tests — `CartControllerTest` (2 tests)
-
-Integration tests for cart web pages.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `viewCart_LoadsPage` | GET `/buyer/cart` renders cart page |
-| 2 | `addToCart_ValidRequest_Redirects` | POST `/buyer/cart/add` adds item and redirects |
-
-### 8. REST Cart Controller Tests — `RestCartControllerTest` (6 tests)
-
-Integration tests for cart REST API endpoints.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `getCart_Returns200` | GET `/api/cart` returns 200 with cart JSON |
-| 2 | `addItem_Returns201` | POST `/api/cart/items` returns 201 Created |
-| 3 | `updateItem_QuantityGreaterThanZero_Returns200` | PATCH `/api/cart/items/1` with quantity > 0 returns 200 |
-| 4 | `updateItem_QuantityZeroOrLess_ReturnsNoContent` | PATCH `/api/cart/items/1` with quantity ≤ 0 returns 204 (removes item) |
-| 5 | `removeItem_Returns204` | DELETE `/api/cart/items/1` returns 204 |
-| 6 | `clearCart_Returns204` | DELETE `/api/cart` returns 204 |
-
-### 9. Cart Service Tests — `CartServiceTest` (13 tests)
-
-Unit tests for `CartService` business logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `getOrCreateCart_ReturnsExistingCart` | Returns existing cart for user |
-| 2 | `getOrCreateCart_CreatesMissingCart` | Creates new cart if none exists |
-| 3 | `addItem_AddNewItemWorks` | Adding a new product to cart works |
-| 4 | `addItem_AddingSameProductIncreasesQuantity` | Adding same product increases quantity |
-| 5 | `addItem_ThrowsIfProductInactive` | Throws exception for inactive product |
-| 6 | `addItem_ThrowsIfOutOfStock` | Throws exception for out-of-stock product |
-| 7 | `updateItemQuantity_ValidNumberWorks` | Updating quantity to valid number works |
-| 8 | `updateItemQuantity_AboveStockFails` | Updating quantity above stock throws exception |
-| 9 | `updateItemQuantity_ZeroRemovesItem` | Setting quantity to 0 removes item |
-| 10 | `updateItemQuantity_MissingItemThrowsNotFound` | Updating non-existent item throws NotFoundException |
-| 11 | `removeItem_SpecificItemWorks` | Removing a specific item works |
-| 12 | `clearCart_RemovesAllItems` | Clearing cart removes all items |
-| 13 | `calculateTotal_CorrectWithSnapshot` | Total calculation uses price snapshot correctly |
-
-### 10. Order Controller Tests — `OrderControllerTest` (11 tests)
-
-Integration tests for checkout and order management pages.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `checkoutPage_WithItems_Loads` | GET `/buyer/checkout` with cart items renders checkout page |
-| 2 | `checkoutPage_EmptyCart_RedirectsToCart` | GET `/buyer/checkout` with empty cart redirects to `/buyer/cart` |
-| 3 | `placeOrder_Success_RedirectsToOrders` | POST `/buyer/checkout` places order and redirects to orders |
-| 4 | `placeOrder_Failure_RedirectsBackWithFlash` | Checkout failure redirects back with error flash message |
-| 5 | `buyerOrders_LoadsPage` | GET `/buyer/orders` loads buyer orders page |
-| 6 | `buyerOrderDetail_LoadsPage` | GET `/buyer/orders/1` loads order detail page |
-| 7 | `cancelOrder_Success_RedirectsToOrders` | POST `/buyer/orders/1/cancel` cancels and redirects |
-| 8 | `cancelOrder_NotPending_ShowsError` | Cancelling non-pending order shows error flash |
-| 9 | `sellerOrders_LoadsPage` | GET `/seller/orders` loads seller order items page |
-| 10 | `advanceStatus_Valid_Redirects` | POST `/seller/orders/1/advance` advances status and redirects |
-| 11 | `advanceStatus_InvalidPermission_ShowsErrorFlash` | Seller cannot advance another seller's order item |
-
-### 11. REST Order Controller Tests — `RestOrderControllerTest` (5 tests)
-
-Integration tests for order REST API endpoints.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `checkout_Returns201` | POST `/api/buyer/orders/checkout` returns 201 Created |
-| 2 | `getBuyerOrders_Returns200` | GET `/api/buyer/orders` returns 200 with orders JSON |
-| 3 | `getBuyerOrderDetail_WrongBuyer_Returns403` | GET `/api/buyer/orders/100` for wrong buyer returns 403 |
-| 4 | `getBuyerOrderDetail_Returns200` | GET `/api/buyer/orders/100` for correct buyer returns 200 |
-| 5 | `getSellerOrders_Returns200` | GET `/api/seller/orders` returns 200 with order items JSON |
-
-### 12. Seller Controller Tests — `SellerControllerTest` (11 tests)
-
-Integration tests for seller dashboard, profile, and product CRUD.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `dashboard_LoadsWithProductCount` | GET `/seller/dashboard` loads with product count |
-| 2 | `profilePage_LoadsWithProfileData` | GET `/seller/profile` renders profile page |
-| 3 | `updateProfile_Valid_RedirectsWithSuccess` | Valid profile update redirects with success |
-| 4 | `updateProfile_Invalid_ReturnsSamePage` | Invalid profile update (shop name too long) stays on page |
-| 5 | `listProducts_LoadsPage` | GET `/seller/products` loads seller's product list |
-| 6 | `showCreateForm_ApprovedSeller_ShowsForm` | Approved seller can see product create form |
-| 7 | `showCreateForm_PendingSeller_RedirectsToDashboard` | Pending seller is redirected from create form |
-| 8 | `createProduct_Valid_RedirectsToProducts` | Valid product creation redirects to product list |
-| 9 | `showEditForm_OwnProduct_ShowsForm` | Seller can edit own product |
-| 10 | `showEditForm_OtherSellersProduct_RedirectsToProducts` | Seller cannot edit another seller's product |
-| 11 | `deleteProduct_RedirectsWithSuccess` | Product deletion redirects with success message |
-
-### 13. Seller Profile Service Tests — `SellerProfileServiceTest` (7 tests)
-
-Unit tests for `SellerProfileService` business logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `createProfile_Success` | Creating seller profile saves correctly |
-| 2 | `getProfileByUserId_Success` | Retrieves seller profile by user ID |
-| 3 | `getProfileByUserId_NotFound` | Throws NotFoundException for missing profile |
-| 4 | `updateProfile_Success` | Updating seller profile works |
-| 5 | `approveSeller_ChangesStatusToApproved` | Admin approving seller changes status to APPROVED |
-| 6 | `rejectSeller_ChangesStatusToRejected` | Admin rejecting seller changes status to REJECTED |
-| 7 | `listByStatus_ReturnsCorrectSellers` | Filtering sellers by approval status works |
-
-### 14. Admin Controller Tests — `AdminControllerTest` (8 tests)
-
-Integration tests for admin dashboard and management pages.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `dashboard_LoadsWithStats` | GET `/admin/dashboard` loads with all dashboard statistics |
-| 2 | `listSellers_LoadsPage` | GET `/admin/sellers` loads seller list page |
-| 3 | `approveSeller_RedirectsWithSuccess` | POST `/admin/sellers/1/approve` approves and redirects |
-| 4 | `rejectSeller_RedirectsWithSuccess` | POST `/admin/sellers/1/reject` rejects and redirects |
-| 5 | `listUsers_LoadsPage` | GET `/admin/users` loads user list page |
-| 6 | `listProducts_LoadsPage` | GET `/admin/products` loads product list page |
-| 7 | `toggleProduct_RedirectsWithSuccess` | POST `/admin/products/1/toggle` toggles active and redirects |
-| 8 | `listOrders_LoadsPage` | GET `/admin/orders` loads order list page |
-
-### 15. REST Admin Controller Tests — `RestAdminControllerTest` (3 tests)
-
-Integration tests for admin REST API endpoints.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `getStats_Returns200` | GET `/api/admin/stats` returns 200 with dashboard stats JSON |
-| 2 | `listUsers_Returns200` | GET `/api/admin/users` returns 200 with user list JSON |
-| 3 | `listPendingSellers_Returns200` | GET `/api/admin/sellers/pending` returns 200 with pending sellers |
-
-### 16. Product Service Tests — `ProductServiceTest` (14 tests)
-
-Unit tests for `ProductService` business logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `findById_ReturnsCorrectProduct` | Finds product by ID |
-| 2 | `findById_ThrowsNotFoundWhenMissing` | Throws NotFoundException for missing product |
-| 3 | `create_ThrowsNotFoundForInvalidCategory` | Creating product with invalid category throws exception |
-| 4 | `searchActive_ByNameWorks` | Searching active products by name works |
-| 5 | `update_ThrowsAccessDeniedForOtherSeller` | Cannot update another seller's product |
-| 6 | `update_UpdatesAndReturnsProduct` | Updating own product works |
-| 7 | `delete_DeletesOwnProduct` | Deleting own product works |
-| 8 | `delete_ThrowsAccessDeniedForOtherSeller` | Cannot delete another seller's product |
-| 9 | `findActiveProducts_ReturnsActiveItems` | Listing active products works |
-| 10 | `findActiveByCategory_Works` | Filtering active products by category works |
-| 11 | `toggleActive_TogglesActiveStatus` | Toggling product active status works |
-| 12 | `countBySeller_Works` | Counting products by seller works |
-| 13 | `countActive_Works` | Counting active products works |
-| 14 | `countTotal_Works` | Counting total products works |
-
-### 17. Category Service Tests — `CategoryServiceTest` (8 tests)
-
-Unit tests for `CategoryService` business logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `findAll_ReturnsAllCategories` | Listing all categories works |
-| 2 | `findById_ReturnsCorrectCategory` | Finding category by ID works |
-| 3 | `findById_ThrowsNotFoundWhenMissing` | Throws NotFoundException for missing category |
-| 4 | `findBySlug_ReturnsCorrectCategory` | Finding category by slug works |
-| 5 | `findBySlug_ThrowsNotFoundWhenMissing` | Throws NotFoundException for missing slug |
-| 6 | `create_ReturnsSavedCategory` | Creating a category saves and returns it |
-| 7 | `existsByName_ReturnsTrueWhenExists` | Returns true when category name exists |
-| 8 | `existsByName_ReturnsFalseWhenNotExists` | Returns false when category name doesn't exist |
-
-### 18. Inventory Service Tests — `InventoryServiceTest` (6 tests)
-
-Unit tests for `InventoryService` stock management logic.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `validateStock_PassesWhenEnoughStock` | Validation passes when stock is sufficient |
-| 2 | `validateStock_FailsWhenInsufficientStock` | Throws InsufficientStockException when stock is low |
-| 3 | `decreaseStock_Works` | Decreasing stock by a valid amount works |
-| 4 | `decreaseStock_CannotGoBelowZero` | Cannot decrease stock below zero |
-| 5 | `increaseStock_Works` | Increasing stock works |
-| 6 | `multipleDecreases_ProduceCorrectFinalQuantity` | Multiple decreases produce correct final quantity |
-
-### 19. Security Integration Tests — `SecurityIntegrationTest` (11 tests)
-
-Full Spring Boot integration tests verifying role-based URL authorization rules using `@WithMockUser`.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `guest_CanAccessPublicProductList` | Unauthenticated user can browse `/products` |
-| 2 | `guest_CanAccessApiProducts` | Unauthenticated user can access `/api/products` |
-| 3 | `guest_CanAccessLoginPage` | Unauthenticated user can access `/login` |
-| 4 | `guest_RedirectedFromBuyerDashboard` | Guest is redirected from `/buyer/dashboard` |
-| 5 | `guest_RedirectedFromSellerDashboard` | Guest is redirected from `/seller/dashboard` |
-| 6 | `guest_RedirectedFromAdminDashboard` | Guest is redirected from `/admin/dashboard` |
-| 7 | `buyer_CanAccessBuyerDashboard` | BUYER role can access `/buyer/dashboard` |
-| 8 | `buyer_BlockedFromSellerPages` | BUYER role gets 403 on `/seller/dashboard` |
-| 9 | `buyer_BlockedFromAdminPages` | BUYER role gets 403 on `/admin/dashboard` |
-| 10 | `seller_BlockedFromBuyerPages` | SELLER role gets 403 on `/buyer/dashboard` |
-| 11 | `seller_BlockedFromAdminPages` | SELLER role gets 403 on `/admin/dashboard` |
-
-### 20. Exception Handling Tests — `ExceptionHandlingTest` (10 tests)
-
-Tests for `GlobalExceptionHandler` verifying correct error responses for both web (Thymeleaf views) and API (JSON) requests.
-
-| # | Test | What It Verifies |
-|---|------|-----------------|
-| 1 | `notFound_Web_Returns404View` | NotFoundException → renders `error/404` view for web |
-| 2 | `notFound_Api_Returns404Json` | NotFoundException → 404 JSON for API |
-| 3 | `accessDenied_Web_Returns403View` | AccessDeniedException → renders `error/403` view for web |
-| 4 | `accessDenied_Api_Returns403Json` | AccessDeniedException → 403 JSON for API |
-| 5 | `insufficientStock_Web_ReturnsStockView` | InsufficientStockException → renders `error/stock` view for web |
-| 6 | `insufficientStock_Api_Returns409Json` | InsufficientStockException → 409 Conflict JSON for API |
-| 7 | `validation_Web_Returns400View` | ValidationException → renders `error/400` view for web |
-| 8 | `validation_Api_Returns400Json` | ValidationException → 400 Bad Request JSON for API |
-| 9 | `generic_Web_Returns500View` | RuntimeException → renders `error/500` view for web |
-| 10 | `generic_Api_Returns500Json` | RuntimeException → 500 Internal Server Error JSON for API |
+```bash
+./mvnw clean package
+```
 
 ---
 
-## Test Architecture
+## CI/CD Pipeline
 
-| Category | Approach | Framework |
-|----------|----------|-----------|
-| **Unit Tests** (Service layer) | Mockito mocks for repositories | JUnit 5 + Mockito |
-| **Integration Tests** (Controllers) | `MockMvcBuilders.standaloneSetup()` with mocked services | JUnit 5 + MockMvc |
-| **Security Tests** | `@SpringBootTest` + `@AutoConfigureMockMvc` + `@WithMockUser` | Spring Security Test |
-| **Exception Tests** | Standalone MockMvc with dummy controller + `GlobalExceptionHandler` | JUnit 5 + MockMvc |
+The repository includes a GitHub Actions workflow defined in:
 
-### Test Configuration
+```text
+.github/workflows/ci-cd.yml
+```
 
-- **Test Database**: H2 in-memory (configured in `src/test/resources/application.yaml`)
-- **Authentication in standalone tests**: Custom `HandlerMethodArgumentResolver` to inject mock `UserDetails` for `@AuthenticationPrincipal`
-- **REST tests**: `GlobalExceptionHandler` attached as `@ControllerAdvice` to verify proper HTTP status codes
+### Pipeline Stages
+
+```mermaid
+flowchart LR
+    A[Push / Pull Request] --> B[Checkout Code]
+    B --> C[Setup Java 17]
+    C --> D[Cache Maven Dependencies]
+    D --> E[Run Tests]
+    E --> F[Build JAR]
+    F --> G[Upload Artifact]
+    G --> H[Build Docker Image on main]
+    H --> I[Trigger Render Deploy Hook]
+```
+
+### CI/CD Behavior
+
+- Runs on pushes to `main` and `develop`
+- Runs on pull requests targeting `main` and `develop`
+- Executes tests with Maven
+- Builds the JAR artifact
+- Builds Docker image on pushes to `main`
+- Triggers Render deployment using a deploy hook secret
+
+### Required Secret
+
+| Secret Name | Purpose |
+|---|---|
+| `RENDER_DEPLOY_HOOK_URL` | Render deploy hook used in the deployment stage |
 
 ---
 
-## Total Test Count by Module
+## Seed Data and Startup Behavior
 
-| Module | Unit Tests | Integration Tests | Total |
-|--------|-----------|-------------------|-------|
-| Auth | 7 | 9 | 16 |
-| Product | 28 | 9 | 37 |
-| Buyer | 13 | 9 | 22 |
-| Cart | 13 | 8 | 21 |
-| Order | 1 | 16 | 17 |
-| Seller | 7 | 11 | 18 |
-| Admin | — | 11 | 11 |
-| Security | — | 11 | 11 |
-| Exception Handling | — | 10 | 10 |
-| **Total** | **69** | **94** | **163** |
+On application startup, the project seeds:
+
+- a default admin account
+- marketplace categories
+- product tags
+
+### Seeded Admin Account
+
+> Development convenience only. Change or remove this in production.
+
+| Field | Value |
+|---|---|
+| Email | `admin@market.com` |
+| Password | `12345678` |
+| Role | `ADMIN` |
+
+### Seeded Categories
+
+- Electronics
+- Clothing
+- Books
+- Home & Garden
+- Sports
+- Toys & Games
+- Health & Beauty
+- Automotive
+- Food & Beverages
+- Jewelry
+
+### Seeded Tags
+
+- New Arrival
+- Best Seller
+- On Sale
+- Eco Friendly
+- Premium
+- Trending
+- Limited Edition
+- Handmade
+- Organic
+- Local
+
+### Startup Data Fix
+
+A startup migration runner updates any existing `orders` rows with `NULL` payment methods to `COD`.
+
+---
+
+## Future Improvements
+
+Possible next improvements for this project:
+
+- Add image upload integration instead of plain image URL input
+- Introduce Flyway or Liquibase for formal schema versioning
+- Add seller analytics and revenue summaries
+- Add pagination for more admin pages
+- Add OpenAPI / Swagger documentation for REST APIs
+- Add email notifications for seller approval and order status updates
+- Add production-ready environment variable management with `.env` support and secret injection
+- Replace simulated payment gateway clients with real payment provider integrations
+
+---
+
+## Authors / Team
+
+Add your final team information here.
+
+```text
+Name 1 — Planning / Database / Documentation / Testing / Deployment
+Name 2 — Backend / Frontend / Integration / DevOps
+```
+
+Suggested replacement:
+
+- **Asif Jawad**
+- **Talha Safin**
+
+---
+
+## Submission Notes
+
+If this repository is being submitted for an academic lab/project evaluation, this README already documents the main rubric-relevant areas:
+
+- architecture
+- security
+- database relationships
+- role-based access control
+- DTO usage
+- exception handling
+- Dockerization
+- CI/CD
+- testing
+- deployment workflow
+
