@@ -1015,7 +1015,7 @@ Name 2 — Backend / Frontend / Integration / DevOps
 Suggested replacement:
 
 - **Asif Jawad**
-- **Talha Safin**
+- **Salek Bin Hossain**
 
 ---
 
