@@ -32,6 +32,8 @@
         </div>
         <div class="col-md-7">
             <span class="badge bg-secondary mb-2" th:text="${product.category.name}">Category</span>
+            <!-- Tags -->
+            <span th:each="tag : ${product.tags}" class="badge bg-info text-dark mb-2 ms-1" th:text="${tag.name}">Tag</span>
             <h2 class="fw-bold" th:text="${product.name}">Product Name</h2>
             <h3 class="text-primary fw-bold"
                 th:attr="data-bdt=${product.price}"

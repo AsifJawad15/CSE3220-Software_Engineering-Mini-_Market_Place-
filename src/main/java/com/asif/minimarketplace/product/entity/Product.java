@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "products")
@@ -43,5 +45,15 @@ public class Product extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
     private SellerProfile seller;
+
+    /* ── Many-to-Many: Product ↔ Tag (owning side) ─────────────────────── */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "product_tags",
+        joinColumns        = @JoinColumn(name = "product_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    private Set<Tag> tags = new HashSet<>();
 }
 

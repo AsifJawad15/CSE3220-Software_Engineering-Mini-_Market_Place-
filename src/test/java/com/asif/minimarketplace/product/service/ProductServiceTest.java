@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +30,9 @@ class ProductServiceTest {
 
     @Mock
     private CategoryService categoryService;
+
+    @Mock
+    private TagService tagService;
 
     @InjectMocks
     private ProductService productService;
@@ -129,6 +133,7 @@ class ProductServiceTest {
     void update_UpdatesAndReturnsProduct() {
         when(productRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(product));
         when(categoryService.findById(5L)).thenReturn(category);
+        when(tagService.findByIds(any())).thenReturn(new HashSet<>());
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
         Product result = productService.update(100L, productRequest, seller);

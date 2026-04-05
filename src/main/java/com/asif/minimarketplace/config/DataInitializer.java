@@ -1,6 +1,7 @@
 package com.asif.minimarketplace.config;
 
 import com.asif.minimarketplace.product.service.CategoryService;
+import com.asif.minimarketplace.product.service.TagService;
 import com.asif.minimarketplace.user.entity.RoleName;
 import com.asif.minimarketplace.user.entity.User;
 import com.asif.minimarketplace.user.repository.UserRepository;
@@ -18,11 +19,13 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CategoryService categoryService;
+    private final TagService tagService;
 
     @Override
     public void run(String... args) {
         seedAdmin();
         seedCategories();
+        seedTags();
     }
 
     private void seedAdmin() {
@@ -61,5 +64,26 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
         log.info("Categories seeded.");
+    }
+
+    private void seedTags() {
+        String[][] tags = {
+            {"New Arrival", "new-arrival"},
+            {"Best Seller", "best-seller"},
+            {"On Sale", "on-sale"},
+            {"Eco Friendly", "eco-friendly"},
+            {"Premium", "premium"},
+            {"Trending", "trending"},
+            {"Limited Edition", "limited-edition"},
+            {"Handmade", "handmade"},
+            {"Organic", "organic"},
+            {"Local", "local"}
+        };
+        for (String[] tag : tags) {
+            if (!tagService.existsByName(tag[0])) {
+                tagService.create(tag[0], tag[1]);
+            }
+        }
+        log.info("Tags seeded.");
     }
 }

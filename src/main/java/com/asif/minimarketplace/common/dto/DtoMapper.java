@@ -6,10 +6,12 @@ import com.asif.minimarketplace.order.entity.Order;
 import com.asif.minimarketplace.order.entity.OrderItem;
 import com.asif.minimarketplace.product.entity.Category;
 import com.asif.minimarketplace.product.entity.Product;
+import com.asif.minimarketplace.product.entity.Tag;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import com.asif.minimarketplace.user.entity.User;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,16 @@ public final class DtoMapper {
 
     // ── Product ────────────────────────────────────────────────────────────
     public static ProductDTO toProduct(Product p) {
+        List<ProductDTO.TagDTO> tagDtos = (p.getTags() != null)
+                ? p.getTags().stream()
+                    .map(t -> ProductDTO.TagDTO.builder()
+                            .id(t.getId())
+                            .name(t.getName())
+                            .slug(t.getSlug())
+                            .build())
+                    .collect(Collectors.toList())
+                : Collections.emptyList();
+
         return ProductDTO.builder()
                 .id(p.getId())
                 .name(p.getName())
@@ -43,6 +55,7 @@ public final class DtoMapper {
                 .categoryName(p.getCategory().getName())
                 .sellerId(p.getSeller().getId())
                 .sellerShopName(p.getSeller().getShopName())
+                .tags(tagDtos)
                 .build();
     }
 

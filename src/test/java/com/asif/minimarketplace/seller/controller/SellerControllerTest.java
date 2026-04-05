@@ -5,6 +5,7 @@ import com.asif.minimarketplace.product.entity.Category;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.CategoryService;
 import com.asif.minimarketplace.product.service.ProductService;
+import com.asif.minimarketplace.product.service.TagService;
 import com.asif.minimarketplace.seller.dto.UpdateSellerProfileRequest;
 import com.asif.minimarketplace.seller.entity.ApprovalStatus;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
@@ -49,6 +50,7 @@ public class SellerControllerTest {
     @Mock private SellerProfileService sellerProfileService;
     @Mock private ProductService productService;
     @Mock private CategoryService categoryService;
+    @Mock private TagService tagService;
     @Mock private UserRepository userRepository;
     @Mock private UserDetails userDetails;
 
@@ -164,12 +166,13 @@ public class SellerControllerTest {
         mockAuth();
         when(sellerProfileService.getProfileByUserId(1L)).thenReturn(sellerProfile);
         when(categoryService.findAll()).thenReturn(List.of());
+        when(tagService.findAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/seller/products/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("seller/product-form"))
                 .andExpect(model().attribute("editMode", false))
-                .andExpect(model().attributeExists("productRequest", "categories"));
+                .andExpect(model().attributeExists("productRequest", "categories", "allTags"));
     }
 
     // ── pending seller is redirected from create form ──────────────────────
@@ -213,12 +216,14 @@ public class SellerControllerTest {
         product.setName("My Product");
         product.setPrice(BigDecimal.TEN);
         product.setSeller(sellerProfile);
+        product.setTags(new java.util.HashSet<>());
         Category cat = new Category();
         cat.setId(1L);
         product.setCategory(cat);
 
         when(productService.findById(5L)).thenReturn(product);
         when(categoryService.findAll()).thenReturn(List.of(cat));
+        when(tagService.findAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/seller/products/5/edit"))
                 .andExpect(status().isOk())
