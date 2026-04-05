@@ -5,6 +5,7 @@ import com.asif.minimarketplace.common.exception.NotFoundException;
 import com.asif.minimarketplace.product.dto.ProductRequest;
 import com.asif.minimarketplace.product.entity.Category;
 import com.asif.minimarketplace.product.entity.Product;
+import com.asif.minimarketplace.product.entity.Tag;
 import com.asif.minimarketplace.product.repository.ProductRepository;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -23,6 +25,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
+    private final TagService tagService;
 
     // ── Public browsing ────────────────────────────────────────────────────
 
@@ -56,6 +59,7 @@ public class ProductService {
     @Transactional
     public Product create(ProductRequest request, SellerProfile seller) {
         Category category = categoryService.findById(request.getCategoryId());
+        Set<Tag> tags = tagService.findByIds(request.getTagIds());
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -65,6 +69,7 @@ public class ProductService {
                 .active(request.isActive())
                 .category(category)
                 .seller(seller)
+                .tags(tags)
                 .build();
         Product saved = productRepository.save(product);
         log.info("Product created: {} by seller {}", saved.getName(), seller.getShopName());
@@ -78,6 +83,7 @@ public class ProductService {
             throw new AccessDeniedException("You do not own this product");
         }
         Category category = categoryService.findById(request.getCategoryId());
+        Set<Tag> tags = tagService.findByIds(request.getTagIds());
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
@@ -85,6 +91,7 @@ public class ProductService {
         product.setImageUrl(request.getImageUrl());
         product.setActive(request.isActive());
         product.setCategory(category);
+        product.setTags(tags);
         return productRepository.save(product);
     }
 

@@ -23,11 +23,15 @@
             </div>
             <div class="table-responsive" th:if="${!#lists.isEmpty(products)}">
                 <table class="table table-hover align-middle bg-white rounded">
-                    <thead class="table-light"><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead class="table-light"><tr><th>Name</th><th>Category</th><th>Tags</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                         <tr th:each="p : ${products}">
                             <td class="fw-semibold" th:text="${p.name}">Name</td>
                             <td><span class="badge bg-secondary" th:text="${p.category.name}">Cat</span></td>
+                            <td>
+                                <span th:each="tag : ${p.tags}" class="badge bg-info text-dark me-1" th:text="${tag.name}">Tag</span>
+                                <span th:if="${#sets.isEmpty(p.tags)}" class="text-muted small">—</span>
+                            </td>
                             <td>$<span th:text="${#numbers.formatDecimal(p.price,1,2)}">0</span></td>
                             <td th:text="${p.stockQuantity}">0</td>
                             <td><span th:if="${p.active}" class="badge bg-success">Active</span><span th:unless="${p.active}" class="badge bg-danger">Inactive</span></td>

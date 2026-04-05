@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class ProductRequest {
@@ -29,5 +31,8 @@ public class ProductRequest {
     private Long categoryId;
 
     private boolean active = true;
+
+    /** IDs of tags to associate with this product (many-to-many). */
+    private Set<Long> tagIds = new HashSet<>();
 }
 

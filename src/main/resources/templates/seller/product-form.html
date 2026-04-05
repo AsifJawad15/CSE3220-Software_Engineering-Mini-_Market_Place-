@@ -52,6 +52,21 @@
                         <label class="form-label fw-semibold">Image URL (optional)</label>
                         <input type="text" th:field="*{imageUrl}" class="form-control" placeholder="https://example.com/image.jpg">
                     </div>
+                    <!-- Tags (many-to-many) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tags</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div th:each="tag : ${allTags}" class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       th:name="tagIds"
+                                       th:value="${tag.id}"
+                                       th:id="'tag-' + ${tag.id}"
+                                       th:checked="${productRequest.tagIds != null && productRequest.tagIds.contains(tag.id)}">
+                                <label class="form-check-label" th:for="'tag-' + ${tag.id}" th:text="${tag.name}">Tag</label>
+                            </div>
+                        </div>
+                        <small class="text-muted">Select one or more tags for this product.</small>
+                    </div>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeCheck">
                         <label class="form-check-label" for="activeCheck">Active (visible to buyers)</label>

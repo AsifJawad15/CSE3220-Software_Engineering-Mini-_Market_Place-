@@ -4,6 +4,7 @@ import com.asif.minimarketplace.product.dto.ProductRequest;
 import com.asif.minimarketplace.product.entity.Product;
 import com.asif.minimarketplace.product.service.CategoryService;
 import com.asif.minimarketplace.product.service.ProductService;
+import com.asif.minimarketplace.product.service.TagService;
 import com.asif.minimarketplace.seller.dto.UpdateSellerProfileRequest;
 import com.asif.minimarketplace.seller.entity.ApprovalStatus;
 import com.asif.minimarketplace.seller.entity.SellerProfile;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -32,6 +34,7 @@ public class SellerController {
     private final SellerProfileService sellerProfileService;
     private final ProductService productService;
     private final CategoryService categoryService;
+    private final TagService tagService;
     private final UserRepository userRepository;
 
     private User getCurrentUser(UserDetails userDetails) {
@@ -104,6 +107,7 @@ public class SellerController {
         model.addAttribute("profile", profile);
         model.addAttribute("productRequest", new ProductRequest());
         model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("allTags", tagService.findAll());
         model.addAttribute("editMode", false);
         return "seller/product-form";
     }
@@ -121,6 +125,7 @@ public class SellerController {
             model.addAttribute("user", user);
             model.addAttribute("profile", profile);
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("allTags", tagService.findAll());
             model.addAttribute("editMode", false);
             return "seller/product-form";
         }
@@ -148,12 +153,16 @@ public class SellerController {
         req.setImageUrl(product.getImageUrl());
         req.setCategoryId(product.getCategory().getId());
         req.setActive(product.isActive());
+        req.setTagIds(product.getTags().stream()
+                .map(t -> t.getId())
+                .collect(Collectors.toSet()));
 
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
         model.addAttribute("productRequest", req);
         model.addAttribute("productId", id);
         model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("allTags", tagService.findAll());
         model.addAttribute("editMode", true);
         return "seller/product-form";
     }
@@ -173,6 +182,7 @@ public class SellerController {
             model.addAttribute("profile", profile);
             model.addAttribute("productId", id);
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("allTags", tagService.findAll());
             model.addAttribute("editMode", true);
             return "seller/product-form";
         }
