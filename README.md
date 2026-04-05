@@ -14,6 +14,13 @@
 
 ---
 
+## Authors / Team
+
+- **Salek Bin Hossain**
+- **Asif Jawad**
+
+---
+
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
@@ -36,7 +43,8 @@
 18. [Seed Data and Startup Behavior](#seed-data-and-startup-behavior)
 19. [Future Improvements](#future-improvements)
 20. [Authors / Team](#authors--team)
-
+21. [Deployment](#deployment)
+   
 ---
 
 ## Project Overview
@@ -982,55 +990,9 @@ On application startup, the project seeds:
 - Organic
 - Local
 
-### Startup Data Fix
+## Deployment
 
-A startup migration runner updates any existing `orders` rows with `NULL` payment methods to `COD`.
+The application is deployed and accessible online through Render.
 
----
-
-## Future Improvements
-
-Possible next improvements for this project:
-
-- Add image upload integration instead of plain image URL input
-- Introduce Flyway or Liquibase for formal schema versioning
-- Add seller analytics and revenue summaries
-- Add pagination for more admin pages
-- Add OpenAPI / Swagger documentation for REST APIs
-- Add email notifications for seller approval and order status updates
-- Add production-ready environment variable management with `.env` support and secret injection
-- Replace simulated payment gateway clients with real payment provider integrations
-
----
-
-## Authors / Team
-
-Add your final team information here.
-
-```text
-Name 1 — Planning / Database / Documentation / Testing / Deployment
-Name 2 — Backend / Frontend / Integration / DevOps
-```
-
-Suggested replacement:
-
-- **Asif Jawad**
-- **Talha Safin**
-
----
-
-## Submission Notes
-
-If this repository is being submitted for an academic lab/project evaluation, this README already documents the main rubric-relevant areas:
-
-- architecture
-- security
-- database relationships
-- role-based access control
-- DTO usage
-- exception handling
-- Dockerization
-- CI/CD
-- testing
-- deployment workflow
-
+- **Live URL:** [https://minimarketplace-app.onrender.com/buyer/dashboard](https://minimarketplace-app.onrender.com/buyer/dashboard)
+- **Platform:** Render
