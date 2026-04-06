@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+run.log
+run2.log
+
+### Temp / Debug files ###
+cookies.txt
+response.html
+*.bak
+c.txt
+c2.txt
+
+### Local Maven cache ###
+.m2-home/
